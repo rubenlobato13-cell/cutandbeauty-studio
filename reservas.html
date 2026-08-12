@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reserva tu cita · Cut and Beauty</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#faf9fb;--white:#fff;
+  --rose:#e8c4b8;--rosel:#f0d4ca;--rosed:#c4907e;
+  --blue:#a8c4d0;--bluel:#c0d8e4;
+  --gold:#c9a84c;
+  --dark:#1a0f1e;--mid:#5a4a6e;--light:#9a8ab0;--brd:#e0d8ec;
+  --fd:'Cormorant Garamond',Georgia,serif;--fb:'DM Sans',system-ui,sans-serif;
+}
+body{background:var(--bg);font-family:var(--fb);color:var(--dark);min-height:100vh}
+.hero{background:var(--dark);padding:44px 24px 34px;text-align:center}
+.logo-cut{font-family:var(--fd);font-size:1.6rem;font-weight:600;color:var(--rose);letter-spacing:.04em;line-height:1}
+.logo-and{font-size:.6rem;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;margin:3px 0}
+.logo-beauty{font-family:var(--fd);font-size:1.6rem;font-weight:600;color:var(--blue);letter-spacing:.06em;line-height:1}
+.logo-sub{font-size:.68rem;color:#6a5a7e;letter-spacing:.14em;text-transform:uppercase;margin-top:6px}
+.wrap{max-width:560px;margin:0 auto;padding:36px 18px 60px}
+.sec-t{font-family:var(--fd);font-size:1.4rem;color:var(--dark);font-weight:500;margin-bottom:5px}
+.sec-s{font-size:.78rem;color:var(--light);margin-bottom:20px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:30px}
+.mc{background:var(--white);border:2px solid var(--brd);border-radius:10px;padding:14px;cursor:pointer;transition:all .18s}
+.mc:hover{border-color:var(--rose);transform:translateY(-2px);box-shadow:0 4px 14px rgba(232,196,184,.2)}
+.mc.on{border-color:var(--rose);background:#fff9f7}
+.mi{font-size:1.5rem;margin-bottom:5px}
+.mn{font-family:var(--fd);font-size:1rem;font-weight:600;color:var(--dark)}
+.md{font-size:.68rem;color:var(--light);margin-top:1px}
+.mp{font-family:var(--fd);font-size:1.05rem;font-weight:600;color:var(--rose);margin-top:6px}
+.card{background:var(--white);border:1px solid var(--brd);border-radius:12px;padding:22px;margin-bottom:16px}
+.card-t{font-family:var(--fd);font-size:1.05rem;color:var(--dark);font-weight:500;margin-bottom:14px}
+.fg{margin-bottom:13px}
+.fl{display:block;font-size:.68rem;color:var(--light);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;font-weight:500}
+.inp{background:var(--bg);border:1px solid var(--brd);border-radius:7px;padding:10px 13px;color:var(--dark);font-family:var(--fb);font-size:.86rem;width:100%;outline:none;transition:border-color .15s;-webkit-appearance:none}
+.inp:focus{border-color:var(--rose)}
+.inp::placeholder{color:#c0b0d0}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+textarea.inp{resize:vertical;min-height:76px}
+.btn{width:100%;padding:15px;background:var(--rose);color:white;border:none;border-radius:9px;font-family:var(--fd);font-size:1.15rem;font-weight:500;cursor:pointer;transition:background .18s;letter-spacing:.02em;margin-top:4px}
+.btn:hover{background:var(--rosel);color:var(--dark)}
+.note{text-align:center;font-size:.71rem;color:var(--light);margin-top:10px;line-height:1.5}
+.err{background:#fff5f5;border:1px solid #f0c0c0;color:#c05050;border-radius:7px;padding:10px 13px;font-size:.8rem;margin-bottom:12px;display:none}
+.ok{display:none;text-align:center;padding:50px 22px;background:var(--white);border:1px solid var(--brd);border-radius:12px}
+.ok-i{font-size:3rem;margin-bottom:14px}
+.ok-t{font-family:var(--fd);font-size:1.6rem;color:var(--dark);font-weight:500;margin-bottom:8px}
+.ok-s{font-size:.83rem;color:var(--light);line-height:1.6}
+footer{text-align:center;padding:18px;font-size:.7rem;color:var(--light)}
+input[type=date],input[type=time]{color-scheme:light}
+@media(max-width:400px){.grid,.fr2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="logo-cut">CUT</div>
+  <div class="logo-and">and</div>
+  <div class="logo-beauty">BEAUTY</div>
+  <div class="logo-sub">Valencia · Alicante · Tratamientos capilares</div>
+</div>
+
+<div class="wrap">
+  <div class="sec-t">Elige tu tratamiento</div>
+  <div class="sec-s">Selecciona el servicio que deseas reservar</div>
+
+  <div class="grid">
+    <div class="mc" onclick="sel(1,'Keratin Fusion',320)">
+      <div class="mi">💎</div>
+      <div class="mn">Keratin Fusion</div>
+      <div class="md">Alisado premium</div>
+      <div class="mp">320€</div>
+    </div>
+    <div class="mc" onclick="sel(2,'Sublime 10.3',280)">
+      <div class="mi">✨</div>
+      <div class="mn">Sublime 10.3</div>
+      <div class="md">Color luminoso</div>
+      <div class="mp">280€</div>
+    </div>
+    <div class="mc" onclick="sel(3,'Softy Mood',250)">
+      <div class="mi">🌸</div>
+      <div class="mn">Softy Mood</div>
+      <div class="md">Tratamiento suavizante</div>
+      <div class="mp">250€</div>
+    </div>
+    <div class="mc" onclick="sel(4,'Bae Berry',230)">
+      <div class="mi">🫐</div>
+      <div class="mn">Bae Berry</div>
+      <div class="md">Color vibrante</div>
+      <div class="mp">230€</div>
+    </div>
+    <div class="mc" onclick="sel(5,'Bare Treatment',200)">
+      <div class="mi">🌿</div>
+      <div class="mn">Bare Treatment</div>
+      <div class="md">Nutrición capilar</div>
+      <div class="mp">200€</div>
+    </div>
+  </div>
+
+  <div id="form" style="display:none">
+    <div class="card">
+      <div class="card-t">Tus datos</div>
+      <div class="fg">
+        <label class="fl">Nombre completo *</label>
+        <input class="inp" id="nom" placeholder="Tu nombre y apellidos" type="text">
+      </div>
+      <div class="fr2">
+        <div class="fg">
+          <label class="fl">Teléfono *</label>
+          <input class="inp" id="tel" placeholder="+34 6XX XXX XXX" type="tel">
+        </div>
+        <div class="fg">
+          <label class="fl">Email</label>
+          <input class="inp" id="email" placeholder="tu@email.com" type="email">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-t">Disponibilidad</div>
+      <div class="fg">
+        <label class="fl">Sede *</label>
+        <select class="inp" id="sede">
+          <option value="">Selecciona la sede...</option>
+          <option value="Valencia">Valencia</option>
+          <option value="Alicante">Alicante</option>
+        </select>
+      </div>
+      <div class="fr2">
+        <div class="fg">
+          <label class="fl">Fecha preferida</label>
+          <input class="inp" id="fecha" type="date">
+        </div>
+        <div class="fg">
+          <label class="fl">Hora aproximada</label>
+          <input class="inp" id="hora" type="time">
+        </div>
+      </div>
+      <div class="fg" style="margin-bottom:0">
+        <label class="fl">Notas</label>
+        <textarea class="inp" id="notas" placeholder="Alergias, preferencias, cualquier cosa que debamos saber..."></textarea>
+      </div>
+    </div>
+
+    <div class="err" id="err"></div>
+    <button class="btn" onclick="enviar()">Solicitar cita por WhatsApp →</button>
+    <p class="note">Te confirmaremos la disponibilidad por WhatsApp</p>
+  </div>
+
+  <div class="ok" id="ok">
+    <div class="ok-i">🌸</div>
+    <div class="ok-t">¡Solicitud enviada!</div>
+    <div class="ok-s">Se ha abierto WhatsApp con tu solicitud.<br>Pronto recibirás confirmación.</div>
+  </div>
+</div>
+
+<footer>Cut and Beauty · Valencia · Alicante</footer>
+
+<script>
+var selId=null, selNom='', selPrecio=0;
+
+function sel(id,nom,precio){
+  selId=id; selNom=nom; selPrecio=precio;
+  document.querySelectorAll('.mc').forEach(function(c){c.classList.remove('on')});
+  document.querySelectorAll('.mc')[id-1].classList.add('on');
+  var f=document.getElementById('form');
+  f.style.display='block';
+  setTimeout(function(){f.scrollIntoView({behavior:'smooth',block:'start'})},100);
+}
+
+function enviar(){
+  var nom=document.getElementById('nom').value.trim();
+  var tel=document.getElementById('tel').value.trim();
+  var sede=document.getElementById('sede').value;
+  var fecha=document.getElementById('fecha').value;
+  var hora=document.getElementById('hora').value;
+  var notas=document.getElementById('notas').value.trim();
+  var err=document.getElementById('err');
+  err.style.display='none';
+
+  if(!nom||!tel||!selId||!sede){
+    err.textContent='Por favor rellena tu nombre, teléfono, sede y elige un tratamiento.';
+    err.style.display='block';
+    return;
+  }
+
+  var msg='Hola, me gustaría reservar una cita en Cut and Beauty:\n\n';
+  msg+='💇 Tratamiento: '+selNom+'\n';
+  msg+='💰 Precio: '+selPrecio+'€\n';
+  msg+='📍 Sede: '+sede+'\n';
+  msg+='👤 Nombre: '+nom+'\n';
+  msg+='📞 Teléfono: '+tel+'\n';
+  if(fecha) msg+='📅 Fecha preferida: '+fecha+'\n';
+  if(hora)  msg+='🕐 Hora preferida: '+hora+'\n';
+  if(notas) msg+='📝 Notas: '+notas+'\n';
+
+  // CAMBIA ESTE NÚMERO POR EL TUYO
+  var numero='34600000000';
+  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
+  document.getElementById('form').style.display='none';
+  document.getElementById('ok').style.display='block';
+  document.getElementById('ok').scrollIntoView({behavior:'smooth'});
+}
+
+var today=new Date().toISOString().split('T')[0];
+document.getElementById('fecha').min=today;
+</script>
+</body>
+</html>
