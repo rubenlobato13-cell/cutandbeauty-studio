@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cut and Beauty · Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyBlnxD0fQIi_EYUF8iGSbVKTN7Y4E6A2PQ",
+  authDomain:"dosha-balance-bfdb0.firebaseapp.com",
+  projectId:"dosha-balance-bfdb0",
+  storageBucket:"dosha-balance-bfdb0.firebasestorage.app",
+  messagingSenderId:"1089942977481",
+  appId:"1:1089942977481:web:7e9cc7eab9962dd48d0618"
+});
+window._db = firebase.firestore();
+window._col = "cutbeauty";
+window._ser = {
+  citas:    (arr) => arr.map(c=>({...c, fecha:c.fecha.getTime()})),
+  citas_in: (arr) => arr.map(c=>({...c, fecha:new Date(c.fecha)})),
+  bonos:    (arr) => arr.map(b=>({...b, fecha:b.fecha.getTime()})),
+  bonos_in: (arr) => arr.map(b=>({...b, fecha:new Date(b.fecha)})),
+};
+window._save = {
+  citas:      (d)=>window._db.collection(window._col).doc("citas").set({data:window._ser.citas(d)}),
+  clientes:   (d)=>window._db.collection(window._col).doc("clientes").set({data:d}),
+  servicios:  (d)=>window._db.collection(window._col).doc("servicios").set({data:d}),
+  bonos:      (d)=>window._db.collection(window._col).doc("bonos").set({data:window._ser.bonos(d)}),
+  bonoPrices: (d)=>window._db.collection(window._col).doc("bonoPrices").set({data:d}),
+};
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0b0f;--surf:#131118;--card:#1a1820;--card2:#211f2a;
+  --b1:#2c2838;--b2:#3a3548;--b3:#4a4560;
+  --rose:#e8c4b8;--rosel:#f0d4ca;--rosed:#c4907e;
+  --blue:#a8c4d0;--bluel:#c0d8e4;--blued:#7aa0b0;
+  --gold:#c9a84c;--goldl:#dfc070;--goldd:#a08030;
+  --cream:#ede8f4;--mut:#6a5f78;--mut2:#8a7a9a;
+  --green:#7aaa88;--red:#b86272;--amb:#c9944c;
+  --text:#ede8f4;
+  --fd:'Cormorant Garamond',Georgia,serif;
+  --fb:'DM Sans',system-ui,sans-serif;
+}
+html,body,#root{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--fb)}
+.app{display:flex;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{width:215px;background:var(--surf);border-right:1px solid var(--b1);display:flex;flex-direction:column;position:fixed;height:100vh;z-index:10}
+.logo-area{padding:24px 20px 20px;border-bottom:1px solid var(--b1)}
+.logo-cut{font-family:var(--fd);font-size:1.3rem;font-weight:600;color:var(--rose);letter-spacing:.04em;line-height:1}
+.logo-and{font-size:.6rem;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;margin:2px 0}
+.logo-beauty{font-family:var(--fd);font-size:1.3rem;font-weight:600;color:var(--blue);letter-spacing:.06em;line-height:1}
+.logo-sub{font-size:.62rem;color:var(--mut);letter-spacing:.14em;text-transform:uppercase;margin-top:5px}
+.nav{flex:1;padding:12px 8px;display:flex;flex-direction:column;gap:2px}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 13px;border-radius:8px;cursor:pointer;font-size:.82rem;color:var(--mut2);transition:all .15s;border:1px solid transparent;user-select:none}
+.ni:hover{background:var(--card);color:var(--cream)}
+.ni.on{background:var(--card2);color:var(--rose);border-color:var(--b1);font-weight:500}
+.ni.on i{color:var(--blue)}
+.sidebar-foot{padding:14px 18px;border-top:1px solid var(--b1)}
+.foot-date{font-size:.65rem;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;line-height:1.6}
+.save-ind{display:flex;align-items:center;gap:5px;font-size:.67rem;margin-top:6px}
+
+/* ── MAIN ── */
+.main{flex:1;margin-left:215px;overflow-y:auto;min-height:100vh}
+.page{padding:30px 32px;max-width:1000px}
+.pt{font-family:var(--fd);font-size:1.9rem;font-weight:500;color:var(--cream);margin-bottom:3px;letter-spacing:.01em}
+.ps{font-size:.79rem;color:var(--mut);margin-bottom:26px}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--b1);border-radius:12px;padding:20px}
+.card2{background:var(--card2);border:1px solid var(--b2);border-radius:10px;padding:16px}
+
+/* ── STAT ROWS ── */
+.sr{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:22px}
+.sc{background:var(--card);border:1px solid var(--b1);border-radius:12px;padding:16px 18px}
+.sl{font-size:.68rem;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px}
+.sv{font-family:var(--fd);font-size:1.75rem;font-weight:500;color:var(--cream);line-height:1}
+.sv.ro{color:var(--rose)}.sv.bl{color:var(--blue)}.sv.am{color:var(--amb)}.sv.gn{color:var(--green)}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:.69rem;font-weight:500;letter-spacing:.04em}
+.badge.pendiente{background:rgba(201,148,76,.13);color:var(--amb);border:1px solid rgba(201,148,76,.28)}
+.badge.cobrada{background:rgba(122,170,136,.13);color:var(--green);border:1px solid rgba(122,170,136,.28)}
+.badge.cancelada{background:rgba(184,98,114,.13);color:var(--red);border:1px solid rgba(184,98,114,.28)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 15px;border-radius:7px;font-size:.79rem;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:var(--fb)}
+.btn-r{background:var(--rose);color:#1a0f0a}.btn-r:hover{background:var(--rosel)}
+.btn-b{background:var(--blue);color:#0a1518}.btn-b:hover{background:var(--bluel)}
+.btn-o{background:transparent;color:var(--mut2);border:1px solid var(--b2)}.btn-o:hover{color:var(--cream);background:var(--card2)}
+.btn-gh{background:transparent;color:var(--mut2);padding:6px 10px;border:none;cursor:pointer;font-family:var(--fb);border-radius:6px}.btn-gh:hover{color:var(--cream);background:var(--card2)}
+.btn-sm{padding:4px 11px;font-size:.72rem}
+
+/* ── TIMELINE ── */
+.tl{display:flex;flex-direction:column}
+.ti{display:flex;gap:13px;padding:12px 0;border-bottom:1px solid var(--b1);align-items:flex-start}
+.ti:last-child{border-bottom:none}
+.tt{font-size:.76rem;color:var(--mut);min-width:44px;padding-top:3px}
+.td{width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.tn{font-size:.85rem;font-weight:500;color:var(--cream)}
+.tdesc{font-size:.74rem;color:var(--mut);margin-top:2px}
+
+/* ── CALENDAR ── */
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.ct{font-family:var(--fd);font-size:1.25rem;font-weight:500;color:var(--cream);text-transform:capitalize}
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cwd{text-align:center;font-size:.64rem;color:var(--mut);text-transform:uppercase;letter-spacing:.07em;padding:6px 0}
+.cd{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:7px;cursor:pointer;font-size:.8rem;color:var(--mut2);transition:all .15s;gap:3px;border:1px solid transparent}
+.cd:hover{background:var(--card2);color:var(--cream)}
+.cd.today{color:var(--rose);border-color:var(--rosed)}
+.cd.sel{background:var(--card2);border-color:var(--b2);color:var(--cream)}
+.cd.emp{cursor:default}.cd.emp:hover{background:transparent}
+.cdot{width:4px;height:4px;border-radius:50%;background:var(--blue)}
+
+/* ── CLIENTS ── */
+.clg{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.clc{background:var(--card);border:1px solid var(--b1);border-radius:12px;padding:16px;cursor:pointer;transition:all .15s}
+.clc:hover{border-color:var(--b2);background:var(--card2)}
+.av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--rose),var(--blue));display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:.95rem;color:#0c0b0f;font-weight:700;flex-shrink:0}
+
+/* ── INPUTS ── */
+.inp{background:var(--card);border:1px solid var(--b2);border-radius:7px;padding:8px 13px;color:var(--text);font-family:var(--fb);font-size:.82rem;width:100%;outline:none;transition:border-color .15s}
+.inp:focus{border-color:var(--rose)}.inp::placeholder{color:var(--mut)}
+textarea.inp{resize:vertical;min-height:72px}
+select.inp{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236a5f78' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px}
+option{background:#1a1820}
+input[type=date],input[type=time]{color-scheme:dark}
+
+/* ── FILTERS ── */
+.ft{display:flex;gap:3px;background:var(--card);border:1px solid var(--b1);border-radius:9px;padding:3px;width:fit-content}
+.ftb{padding:5px 13px;border-radius:6px;font-size:.74rem;font-weight:500;cursor:pointer;color:var(--mut2);transition:all .15s;border:none;background:transparent;font-family:var(--fb)}
+.ftb.on{background:var(--card2);color:var(--rose);border:1px solid var(--b2)}
+
+/* ── CITAS LIST ── */
+.cr{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--card);border:1px solid var(--b1);border-radius:9px;margin-bottom:7px;transition:border-color .15s}
+.cr:hover{border-color:var(--b2)}
+
+/* ── SERVICIOS ── */
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.sc-card{background:var(--card);border:1px solid var(--b1);border-radius:13px;padding:20px;transition:all .2s}
+.sc-card:hover{border-color:var(--rose);transform:translateY(-1px)}
+.sc-ico{font-size:1.8rem;margin-bottom:10px;display:block}
+.sc-nm{font-family:var(--fd);font-size:1.1rem;font-weight:600;color:var(--cream);margin-bottom:3px}
+.sc-dc{font-size:.74rem;color:var(--mut2);line-height:1.5;margin-bottom:12px}
+.sc-pr{font-family:var(--fd);font-size:1.2rem;font-weight:600;color:var(--rose)}
+.sc-min{font-size:.71rem;color:var(--mut);margin-top:1px}
+
+/* ── BONOS ── */
+.pb{height:5px;background:var(--b1);border-radius:3px;overflow:hidden;margin-top:6px}
+.pf{height:100%;border-radius:3px}
+
+/* ── MODAL ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal{background:var(--card);border:1px solid var(--b2);border-radius:15px;padding:26px;width:100%;max-width:490px;max-height:84vh;overflow-y:auto}
+.modt{font-family:var(--fd);font-size:1.3rem;font-weight:500;color:var(--cream);margin-bottom:18px}
+.fg{margin-bottom:13px}
+.fl{display:block;font-size:.7rem;color:var(--mut2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ── LINK ── */
+.lu{font-family:'Courier New',monospace;font-size:.85rem;color:var(--rose);background:var(--surf);border:1px solid var(--b2);border-radius:7px;padding:11px 14px;word-break:break-all}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--surf)}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo } = React;
+const { useEffect } = React;
+
+const fmt  = n => `${Number(n).toFixed(0)}€`;
+const isSameDay = (a,b) => a.toDateString()===b.toDateString();
+const addDays   = (d,n) => { const r=new Date(d); r.setDate(r.getDate()+n); return r; };
+const fmtTime   = d => d.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"});
+const HOY = new Date();
+
+const S0 = [
+  {id:1,nombre:"Keratin Fusion", precio:320,desc:"Tratamiento de queratina premium para un cabello liso, brillante y sin frizz de larga duración.",icon:"💎"},
+  {id:2,nombre:"Sublime 10.3",   precio:280,desc:"Color sublime de alta cobertura con tonos cálidos y luminosidad excepcional.",icon:"✨"},
+  {id:3,nombre:"Softy Mood",     precio:250,desc:"Tratamiento suavizante que transforma la textura del cabello con efecto sedoso y manejable.",icon:"🌸"},
+  {id:4,nombre:"Bae Berry",      precio:230,desc:"Color vibrante en tonos berry y rojizos, de larga duración con acabado glossy.",icon:"🫐"},
+  {id:5,nombre:"Bare Treatment", precio:200,desc:"Tratamiento nutritivo intensivo que restaura la fibra capilar desde el interior.",icon:"🌿"},
+];
+
+const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const DIAS  = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+const NAV   = [
+  {id:"resumen",    label:"Resumen",    icon:"layout-grid"},
+  {id:"calendario", label:"Calendario", icon:"calendar"},
+  {id:"citas",      label:"Citas",      icon:"clipboard-list"},
+  {id:"clientes",   label:"Clientes",   icon:"users"},
+  {id:"pagos",      label:"Pagos",      icon:"wallet"},
+  {id:"servicios",  label:"Servicios",  icon:"sparkles"},
+  {id:"bonos",      label:"Bonos",      icon:"ticket"},
+  {id:"enlace",     label:"Mi Enlace",  icon:"link"},
+];
+
+const Icon = ({n,s=15}) => <i className={`ti ti-${n}`} style={{fontSize:s,lineHeight:1}}/>;
+
+function App() {
+  const [tab, setTab]       = useState("resumen");
+  const [servicios,setSvc]  = useState(S0);
+  const [citas,setCitas]    = useState([]);
+  const [clientes,setCls]   = useState([]);
+  const [loading,setLoading]= useState(true);
+  const [saveStatus,setSave]= useState("");
+
+  const [bonoPrices,setBP]  = useState(S0.reduce((a,s)=>({...a,[s.id]:{s3:"",s5:"",s10:""}}),{}));
+  const [bonosV,setBonosV]  = useState([]);
+
+  const [calBase,setCalBase]= useState(new Date(HOY.getFullYear(),HOY.getMonth(),1));
+  const [selDay,setSelDay]  = useState(HOY);
+  const [filtro,setFiltro]  = useState("todas");
+  const [busq,setBusq]      = useState("");
+
+  const [selCl,setSelCl]    = useState(null);
+  const [ncModal,setNcModal]= useState(false);
+  const [clModal,setClModal]= useState(false);
+  const [sModal,setSModal]  = useState(false);
+  const [bModal,setBModal]  = useState(false);
+  const [copied,setCopied]  = useState(false);
+
+  const [ncForm,setNcForm]  = useState({cid:"",sid:"",fecha:"",hora:"",domicilio:false,extra:""});
+  const [clForm,setClForm]  = useState({nombre:"",tel:"",email:"",fav:"",notas:"",sede:"Valencia"});
+  const [sForm,setSForm]    = useState({icon:"✂️",nombre:"",precio:"",desc:""});
+  const [bForm,setBForm]    = useState({cid:"",sid:"",sesiones:"3"});
+
+  const LINK = "https://rubenlobato13-cell.github.io/dosha-balance-studio/cutbeauty-reservas.html";
+
+  // ── Firebase load ──
+  useEffect(() => {
+    const db = window._db, col = window._col;
+    if (!db) { setLoading(false); return; }
+    Promise.all([
+      db.collection(col).doc("citas").get(),
+      db.collection(col).doc("clientes").get(),
+      db.collection(col).doc("servicios").get(),
+      db.collection(col).doc("bonos").get(),
+      db.collection(col).doc("bonoPrices").get(),
+    ]).then(([cd,cld,sd,bd,bpd]) => {
+      if (cd.exists)  setCitas(window._ser.citas_in(cd.data().data));
+      if (cld.exists) setCls(cld.data().data);
+      if (sd.exists)  setSvc(sd.data().data);
+      if (bd.exists)  setBonosV(window._ser.bonos_in(bd.data().data));
+      if (bpd.exists) setBP(bpd.data().data);
+      setLoading(false);
+    }).catch(()=>setLoading(false));
+  },[]);
+
+  const save = (key,data) => {
+    setSave("guardando");
+    window._save[key](data)
+      .then(()=>{ setSave("guardado"); setTimeout(()=>setSave(""),2000); })
+      .catch(()=>setSave(""));
+  };
+
+  const gS = id => servicios.find(s=>s.id===id);
+  const gC = id => clientes.find(c=>c.id===id);
+
+  const cobrar   = id => { const n=citas.map(c=>c.id===id?{...c,estado:"cobrada"}:c);   setCitas(n); save("citas",n); };
+  const cancelar = id => { const n=citas.map(c=>c.id===id?{...c,estado:"cancelada"}:c); setCitas(n); save("citas",n); };
+
+  const citasHoy = useMemo(()=>citas.filter(c=>isSameDay(c.fecha,HOY)).sort((a,b)=>a.fecha-b.fecha),[citas]);
+  const cobHoy   = citasHoy.filter(c=>c.estado==="cobrada").reduce((s,c)=>s+c.monto,0);
+  const penHoy   = citasHoy.filter(c=>c.estado==="pendiente").reduce((s,c)=>s+c.monto,0);
+  const cobTot   = citas.filter(c=>c.estado==="cobrada").reduce((s,c)=>s+c.monto,0);
+  const penTot   = citas.filter(c=>c.estado==="pendiente").reduce((s,c)=>s+c.monto,0);
+
+  const daysSet = useMemo(()=>{
+    const s=new Set();
+    citas.forEach(c=>{const d=c.fecha; s.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`)});
+    return s;
+  },[citas]);
+
+  const filtered = useMemo(()=>{
+    let l=[...citas].sort((a,b)=>b.fecha-a.fecha);
+    if(filtro!=="todas") l=l.filter(c=>c.estado===filtro);
+    if(busq){ const q=busq.toLowerCase(); l=l.filter(c=>gC(c.cid)?.nombre.toLowerCase().includes(q)||gS(c.sid)?.nombre.toLowerCase().includes(q)); }
+    return l;
+  },[citas,filtro,busq,clientes,servicios]);
+
+  const selDayCitas = useMemo(()=>citas.filter(c=>isSameDay(c.fecha,selDay)).sort((a,b)=>a.fecha-b.fecha),[citas,selDay]);
+
+  const cy=calBase.getFullYear(), cm=calBase.getMonth();
+  const daysInM=new Date(cy,cm+1,0).getDate();
+  const startD=(new Date(cy,cm,1).getDay()+6)%7;
+
+  const clCitas = id => citas.filter(c=>c.cid===id);
+  const clTotal = id => citas.filter(c=>c.cid===id&&c.estado==="cobrada").reduce((s,c)=>s+c.monto,0);
+
+  const addCita = () => {
+    if(!ncForm.cid||!ncForm.sid||!ncForm.fecha||!ncForm.hora) return;
+    const [y,mo,d]=ncForm.fecha.split("-").map(Number);
+    const [h,mi]=ncForm.hora.split(":").map(Number);
+    const fecha=new Date(y,mo-1,d,h,mi);
+    const s=gS(parseInt(ncForm.sid));
+    const extra=parseFloat(ncForm.extra)||0;
+    const monto=(s?.precio||0)+(ncForm.domicilio?20:0)+extra;
+    const nid=citas.length?Math.max(...citas.map(c=>c.id))+1:1;
+    const n=[...citas,{id:nid,cid:parseInt(ncForm.cid),sid:parseInt(ncForm.sid),fecha,estado:"pendiente",monto,domicilio:ncForm.domicilio,extra}];
+    setCitas(n); save("citas",n);
+    setNcForm({cid:"",sid:"",fecha:"",hora:"",domicilio:false,extra:""});
+    setNcModal(false);
+  };
+
+  const addCliente = () => {
+    if(!clForm.nombre) return;
+    const nid=clientes.length?Math.max(...clientes.map(c=>c.id))+1:1;
+    const n=[...clientes,{id:nid,...clForm,fav:parseInt(clForm.fav)||1}];
+    setCls(n); save("clientes",n);
+    setClForm({nombre:"",tel:"",email:"",fav:"",notas:"",sede:"Valencia"});
+    setClModal(false);
+  };
+
+  const addServicio = () => {
+    if(!sForm.nombre||!sForm.precio) return;
+    const nid=Math.max(...servicios.map(s=>s.id))+1;
+    const n=[...servicios,{id:nid,nombre:sForm.nombre,precio:parseFloat(sForm.precio)||0,desc:sForm.desc,icon:sForm.icon||"✂️"}];
+    setSvc(n); save("servicios",n);
+    setSForm({icon:"✂️",nombre:"",precio:"",desc:""});
+    setSModal(false);
+  };
+
+  const getBP = (sid,ses) => { const k=ses===3?"s3":ses===5?"s5":"s10"; return parseFloat(bonoPrices[sid]?.[k])||0; };
+  const updateBP = (sid,key,val) => { const n={...bonoPrices,[sid]:{...bonoPrices[sid],[key]:val}}; setBP(n); save("bonoPrices",n); };
+
+  const venderBono = () => {
+    if(!bForm.cid||!bForm.sid) return;
+    const ses=parseInt(bForm.sesiones);
+    const precio=getBP(parseInt(bForm.sid),ses);
+    const nid=bonosV.length?Math.max(...bonosV.map(b=>b.id))+1:1;
+    const n=[...bonosV,{id:nid,cid:parseInt(bForm.cid),sid:parseInt(bForm.sid),sesiones:ses,usadas:0,precio,cobrado:false,fecha:new Date()}];
+    setBonosV(n); save("bonos",n);
+    setBForm({cid:"",sid:"",sesiones:"3"});
+    setBModal(false);
+  };
+  const usarBono   = bid => { const n=bonosV.map(b=>b.id===bid&&b.usadas<b.sesiones?{...b,usadas:b.usadas+1}:b); setBonosV(n); save("bonos",n); };
+  const cobrarBono = bid => { const n=bonosV.map(b=>b.id===bid?{...b,cobrado:true}:b); setBonosV(n); save("bonos",n); };
+
+  const exportExcel = () => {
+    const wb=XLSX.utils.book_new();
+    const sesiones=citas.sort((a,b)=>a.fecha-b.fecha).map(c=>{ const cl=gC(c.cid),s=gS(c.sid); return {"Fecha":c.fecha.toLocaleDateString("es-ES"),"Hora":fmtTime(c.fecha),"Cliente":cl?.nombre||"","Teléfono":cl?.tel||"","Sede":cl?.sede||"","Servicio":s?.nombre||"","Domicilio":c.domicilio?"Sí":"No","Importe (€)":c.monto,"Estado":c.estado.charAt(0).toUpperCase()+c.estado.slice(1)}; });
+    const ws1=XLSX.utils.json_to_sheet(sesiones); ws1["!cols"]=[10,7,22,16,10,18,10,12,12].map(w=>({wch:w}));
+    XLSX.utils.book_append_sheet(wb,ws1,"Sesiones");
+    const cobradas=citas.filter(c=>c.estado==="cobrada").map(c=>{ const cl=gC(c.cid),s=gS(c.sid); return {"Fecha":c.fecha.toLocaleDateString("es-ES"),"Concepto":`${s?.nombre||""} — ${cl?.nombre||""}`,"Total cobrado":c.monto}; });
+    const ws2=XLSX.utils.json_to_sheet(cobradas); XLSX.utils.book_append_sheet(wb,ws2,"Cobradas");
+    const fecha=new Date().toLocaleDateString("es-ES").replace(/\//g,"-");
+    XLSX.writeFile(wb,`CutAndBeauty_${fecha}.xlsx`);
+  };
+
+  const DOT = ({c}) => <div className="td" style={{background:c.estado==="cobrada"?"var(--green)":c.estado==="cancelada"?"var(--red)":"var(--amb)"}}/>;
+
+  if(loading) return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100vh",background:"var(--bg)",gap:"16px"}}>
+      <div style={{fontFamily:"var(--fd)",fontSize:"1.2rem",color:"var(--rose)"}}>CUT</div>
+      <div style={{fontFamily:"var(--fd)",fontSize:".7rem",color:"var(--gold)",letterSpacing:".2em"}}>AND</div>
+      <div style={{fontFamily:"var(--fd)",fontSize:"1.2rem",color:"var(--blue)"}}>BEAUTY</div>
+      <div style={{display:"flex",gap:"5px",marginTop:"8px"}}>
+        {[0,1,2].map(i=><div key={i} style={{width:"6px",height:"6px",borderRadius:"50%",background:"var(--rose)",opacity:.4,animation:`pulse 1.2s ease-in-out ${i*.2}s infinite`}}/>)}
+      </div>
+      <style>{`@keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}`}</style>
+    </div>
+  );
+
+  return (
+    <div className="app">
+      {/* ── SIDEBAR ── */}
+      <aside className="sidebar">
+        <div className="logo-area">
+          <div className="logo-cut">CUT</div>
+          <div className="logo-and">and</div>
+          <div className="logo-beauty">BEAUTY</div>
+          <div className="logo-sub">Studio · Valencia · Alicante</div>
+        </div>
+        <nav className="nav">
+          {NAV.map(n=>(
+            <div key={n.id} className={`ni ${tab===n.id?"on":""}`} onClick={()=>setTab(n.id)}>
+              <Icon n={n.icon}/> {n.label}
+            </div>
+          ))}
+        </nav>
+        <div className="sidebar-foot">
+          <div className="foot-date">{HOY.toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long"})}</div>
+          {saveStatus&&<div className="save-ind" style={{color:saveStatus==="guardado"?"var(--green)":"var(--rose)"}}>
+            <Icon n={saveStatus==="guardado"?"cloud-check":"cloud-upload"} s={12}/>
+            {saveStatus==="guardado"?"Guardado":"Guardando..."}
+          </div>}
+        </div>
+      </aside>
+
+      <main className="main">
+
+        {/* ══ RESUMEN ══ */}
+        {tab==="resumen" && (
+          <div className="page">
+            <div className="pt">Buenos días 🌸</div>
+            <div className="ps">{HOY.toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div>
+            <div className="sr">
+              {[
+                {label:"Sesiones hoy",  val:citasHoy.length, cls:"ro"},
+                {label:"Cobrado hoy",   val:fmt(cobHoy),     cls:"gn"},
+                {label:"Pendiente hoy", val:fmt(penHoy),     cls:"am"},
+                {label:"Total cobrado", val:fmt(cobTot),     cls:"bl"},
+              ].map(s=>(
+                <div key={s.label} className="sc">
+                  <div className="sl">{s.label}</div>
+                  <div className={`sv ${s.cls}`}>{s.val}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 310px",gap:"16px"}}>
+              <div className="card">
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+                  <span style={{fontFamily:"var(--fd)",fontSize:"1rem",color:"var(--cream)",fontWeight:500}}>Agenda de hoy</span>
+                  <button className="btn btn-r btn-sm" onClick={()=>setNcModal(true)}><Icon n="plus" s={12}/>Nueva cita</button>
+                </div>
+                {citasHoy.length===0
+                  ? <div style={{textAlign:"center",padding:"30px",color:"var(--mut)",fontSize:".82rem"}}>Sin sesiones hoy · ¡Descansa! 🌸</div>
+                  : <div className="tl">{citasHoy.map(c=>{const cl=gC(c.cid),s=gS(c.sid); return(
+                    <div key={c.id} className="ti">
+                      <div className="tt">{fmtTime(c.fecha)}</div>
+                      <DOT c={c}/>
+                      <div style={{flex:1}}>
+                        <div className="tn">{cl?.nombre}</div>
+                        <div className="tdesc">{s?.icon} {s?.nombre}{c.domicilio?" · 🚗":""}</div>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:"7px"}}>
+                        <span className={`badge ${c.estado}`}>{c.estado}</span>
+                        <span style={{fontFamily:"var(--fd)",fontSize:".92rem",color:"var(--rose)"}}>{fmt(c.monto)}</span>
+                        {c.estado==="pendiente"&&<button className="btn btn-r btn-sm" onClick={()=>cobrar(c.id)}><Icon n="check" s={11}/>Cobrar</button>}
+                      </div>
+                    </div>
+                  );})}
+                  </div>
+                }
+              </div>
+              <div className="card">
+                <div style={{fontFamily:"var(--fd)",fontSize:"1rem",color:"var(--cream)",fontWeight:500,marginBottom:"12px"}}>Próximas sesiones</div>
+                {[1,2,3].map(off=>{
+                  const d=addDays(HOY,off);
+                  const dc=citas.filter(c=>isSameDay(c.fecha,d)).sort((a,b)=>a.fecha-b.fecha);
+                  return(
+                    <div key={off} style={{marginBottom:"12px"}}>
+                      <div style={{fontSize:".66rem",color:"var(--mut)",textTransform:"uppercase",letterSpacing:".08em",marginBottom:"4px"}}>{d.toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"short"})}</div>
+                      {dc.length===0
+                        ? <div style={{fontSize:".74rem",color:"var(--mut)",fontStyle:"italic"}}>Sin sesiones</div>
+                        : dc.map(c=>{const cl=gC(c.cid),s=gS(c.sid); return(
+                          <div key={c.id} style={{display:"flex",alignItems:"center",gap:"7px",padding:"4px 0",borderBottom:"1px solid var(--b1)"}}>
+                            <span style={{fontSize:".71rem",color:"var(--mut)",minWidth:"34px"}}>{fmtTime(c.fecha)}</span>
+                            <span style={{fontSize:".79rem",color:"var(--cream)",flex:1}}>{cl?.nombre}</span>
+                            <span>{s?.icon}</span>
+                          </div>
+                        );})}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══ CALENDARIO ══ */}
+        {tab==="calendario" && (
+          <div className="page">
+            <div className="pt">Calendario</div>
+            <div className="ps">Puntos azules donde hay citas · toca un día para ver el detalle</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 290px",gap:"16px"}}>
+              <div className="card">
+                <div className="ch">
+                  <button className="btn-gh" onClick={()=>setCalBase(new Date(cy,cm-1,1))}><Icon n="chevron-left" s={16}/></button>
+                  <div className="ct">{MESES[cm]} {cy}</div>
+                  <button className="btn-gh" onClick={()=>setCalBase(new Date(cy,cm+1,1))}><Icon n="chevron-right" s={16}/></button>
+                </div>
+                <div className="cg">
+                  {DIAS.map(d=><div key={d} className="cwd">{d}</div>)}
+                  {Array.from({length:startD}).map((_,i)=><div key={`e${i}`} className="cd emp"/>)}
+                  {Array.from({length:daysInM}).map((_,i)=>{
+                    const day=i+1;
+                    const isT=cy===HOY.getFullYear()&&cm===HOY.getMonth()&&day===HOY.getDate();
+                    const isS=selDay.getFullYear()===cy&&selDay.getMonth()===cm&&selDay.getDate()===day;
+                    const hasC=daysSet.has(`${cy}-${cm}-${day}`);
+                    return(
+                      <div key={day} className={`cd ${isT?"today":""} ${isS?"sel":""}`} onClick={()=>setSelDay(new Date(cy,cm,day))}>
+                        {day}{hasC&&<div className="cdot"/>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="card">
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+                  <span style={{fontFamily:"var(--fd)",fontSize:"1rem",color:"var(--cream)",fontWeight:500}}>{selDay.toLocaleDateString("es-ES",{day:"numeric",month:"long"})}</span>
+                  <button className="btn btn-r btn-sm" onClick={()=>setNcModal(true)}><Icon n="plus" s={12}/></button>
+                </div>
+                {selDayCitas.length===0
+                  ? <div style={{textAlign:"center",padding:"26px 0",color:"var(--mut)",fontSize:".79rem"}}>Sin sesiones este día</div>
+                  : <div className="tl">{selDayCitas.map(c=>{const cl=gC(c.cid),s=gS(c.sid); return(
+                    <div key={c.id} className="ti" style={{flexDirection:"column",gap:"4px"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:"7px"}}>
+                        <span style={{fontSize:".75rem",color:"var(--mut)",minWidth:"40px"}}>{fmtTime(c.fecha)}</span>
+                        <span style={{fontSize:".84rem",color:"var(--cream)",fontWeight:500,flex:1}}>{cl?.nombre}</span>
+                        <span className={`badge ${c.estado}`}>{c.estado}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:"7px",paddingLeft:"47px"}}>
+                        <span style={{fontSize:".72rem",color:"var(--mut2)"}}>{s?.icon} {s?.nombre}</span>
+                        <span style={{fontFamily:"var(--fd)",fontSize:".88rem",color:"var(--rose)",marginLeft:"auto"}}>{fmt(c.monto)}</span>
+                      </div>
+                      {c.estado==="pendiente"&&<div style={{paddingLeft:"47px"}}><button className="btn btn-r btn-sm" onClick={()=>cobrar(c.id)}><Icon n="check" s={11}/>Cobrar</button></div>}
+                    </div>
+                  );})}
+                  </div>
+                }
+                {selDayCitas.length>0&&<div style={{marginTop:"12px",paddingTop:"10px",borderTop:"1px solid var(--b1)",display:"flex",justifyContent:"space-between"}}>
+                  <span style={{fontSize:".74rem",color:"var(--mut)"}}>Total del día</span>
+                  <span style={{fontFamily:"var(--fd)",fontSize:"1rem",color:"var(--rose)"}}>{fmt(selDayCitas.reduce((s,c)=>s+c.monto,0))}</span>
+                </div>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══ CITAS ══ */}
+        {tab==="citas" && (
+          <div className="page">
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"7px"}}>
+              <div><div className="pt">Citas</div><div className="ps">{citas.length} citas registradas</div></div>
+              <button className="btn btn-r" style={{marginTop:"8px"}} onClick={()=>setNcModal(true)}><Icon n="plus" s={13}/>Nueva cita</button>
+            </div>
+            <div style={{display:"flex",gap:"10px",alignItems:"center",marginBottom:"16px",flexWrap:"wrap"}}>
+              <div className="ft">
+                {["todas","pendiente","cobrada","cancelada"].map(f=>(
+                  <button key={f} className={`ftb ${filtro===f?"on":""}`} onClick={()=>setFiltro(f)}>
+                    {f==="todas"?"Todas":f.charAt(0).toUpperCase()+f.slice(1)}
+                  </button>
+                ))}
+              </div>
+              <div style={{position:"relative",flex:1,minWidth:"180px"}}>
+                <input className="inp" placeholder="Buscar cliente o servicio..." value={busq} onChange={e=>setBusq(e.target.value)} style={{paddingLeft:"28px"}}/>
+              </div>
+            </div>
+            {filtered.length===0
+              ? <div style={{textAlign:"center",padding:"40px",color:"var(--mut)"}}>Sin resultados</div>
+              : filtered.map(c=>{const cl=gC(c.cid),s=gS(c.sid); return(
+                <div key={c.id} className="cr">
+                  <div style={{minWidth:"72px"}}>
+                    <div style={{fontSize:".67rem",color:"var(--mut)"}}>{c.fecha.toLocaleDateString("es-ES",{day:"2-digit",month:"short"})}</div>
+                    <div style={{fontSize:".78rem",color:"var(--mut2)",fontWeight:500}}>{fmtTime(c.fecha)}</div>
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:500,fontSize:".84rem",color:"var(--cream)"}}>{cl?.nombre}</div>
+                    <div style={{fontSize:".71rem",color:"var(--mut2)"}}>{s?.icon} {s?.nombre}{c.domicilio?" · 🚗":""}{c.extra>0?` · +${fmt(c.extra)} extra`:""}</div>
+                  </div>
+                  <span className={`badge ${c.estado}`}>{c.estado}</span>
+                  <div style={{fontFamily:"var(--fd)",fontSize:"1rem",color:"var(--rose)",minWidth:"46px",textAlign:"right"}}>{fmt(c.monto)}</div>
+                  <div style={{display:"flex",gap:"5px",minWidth:"106px",justifyContent:"flex-end"}}>
+                    {c.estado==="pendiente"&&<>
+                      <button className="btn btn-r btn-sm" onClick={()=>cobrar(c.id)}><Icon n="check" s={11}/>Cobrar</button>
+                      <button className="btn btn-o btn-sm" onClick={()=>cancelar(c.id)}><Icon n="x" s={11}/></button>
+                    </>}
+                  </div>
+                </div>
+              );})
+            }
+          </div>
+        )}
+
+        {/* ══ CLIENTES ══ */}
+        {tab==="clientes" && (
+          <div className="page">
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"7px"}}>
+              <div><div className="pt">Clientes</div><div className="ps">{clientes.length} clientas registradas</div></div>
+              <button className="btn btn-r" style={{marginTop:"8px"}} onClick={()=>setClModal(true)}><Icon n="plus" s={13}/>Nueva clienta</button>
+            </div>
+            {clientes.length===0
+              ? <div style={{textAlign:"center",padding:"40px",color:"var(--mut)",background:"var(--card)",borderRadius:"12px",border:"1px solid var(--b1)"}}>Aún no hay clientas · añade la primera</div>
+              : <div className="clg">
+                {clientes.map(cl=>{const tot=clTotal(cl.id),nc=clCitas(cl.id).length,s=gS(cl.fav); return(
+                  <div key={cl.id} className="clc" onClick={()=>setSelCl(cl)}>
+                    <div style={{display:"flex",gap:"12px",alignItems:"flex-start"}}>
+                      <div className="av">{cl.nombre.charAt(0)}</div>
+                      <div style={{flex:1}}>
+                        <div style={{fontWeight:500,fontSize:".86rem",color:"var(--cream)",marginBottom:"1px"}}>{cl.nombre}</div>
+                        <div style={{fontSize:".7rem",color:"var(--mut)",marginBottom:"9px"}}>{cl.sede||"Valencia"} · {cl.email}</div>
+                        <div style={{display:"flex",gap:"13px"}}>
+                          {[{l:"Facturado",v:fmt(tot),c:"var(--rose)"},{l:"Visitas",v:nc,c:"var(--cream)"},{l:"Favorito",v:`${s?.icon||""} ${s?.nombre||"—"}`,c:"var(--mut2)"}].map(x=>(
+                            <div key={x.l}>
+                              <div style={{fontSize:".63rem",color:"var(--mut)",textTransform:"uppercase",letterSpacing:".08em"}}>{x.l}</div>
+                              <div style={{fontFamily:"var(--fd)",fontSize:".93rem",color:x.c}}>{x.v}</div>
+                            </div>
+                          ))}
+                        </div>
+                        {cl.notas&&<div style={{marginTop:"7px",fontSize:".68rem",color:"var(--amb)",background:"rgba(201,148,76,.1)",padding:"3px 8px",borderRadius:"4px",border:"1px solid rgba(201,148,76,.2)"}}>⚠️ {cl.notas}</div>}
+                      </div>
+                    </div>
+                  </div>
+                );})}
+              </div>
+            }
+          </div>
+        )}
+
+        {/* ══ PAGOS ══ */}
+        {tab==="pagos" && (
+          <div className="page">
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"6px"}}>
+              <div><div className="pt">Pagos</div><div className="ps">Resumen financiero completo</div></div>
+              <button className="btn btn-o" style={{marginTop:"8px"}} onClick={exportExcel}><Icon n="file-spreadsheet" s={14}/>Exportar Excel</button>
+            </div>
+            <div className="sr" style={{gridTemplateColumns:"repeat(3,1fr)"}}>
+              {[
+                {l:"Total cobrado",  v:fmt(cobTot), cls:"gn", pct:cobTot/(cobTot+penTot||1)*100, pc:"var(--green)"},
+                {l:"Total pendiente",v:fmt(penTot), cls:"am", pct:penTot/(cobTot+penTot||1)*100, pc:"var(--amb)"},
+                {l:"Total generado", v:fmt(cobTot+penTot), cls:"ro", pct:100, pc:"var(--rose)"},
+              ].map(s=>(
+                <div key={s.l} className="sc">
+                  <div className="sl">{s.l}</div>
+                  <div className={`sv ${s.cls}`}>{s.v}</div>
+                  <div className="pb"><div className="pf" style={{width:`${s.pct}%`,background:s.pc}}/></div>
+                </div>
+              ))}
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"}}>
+              <div className="card">
+                <div style={{fontFamily:"var(--fd)",fontSize:"1rem",color:"var(--amb)",fontWeight:500,marginBottom:"12px"}}>● Pendientes</div>
+                {citas.filter(c=>c.estado==="pendiente").sort((a,b)=>b.fecha-a.fecha).map(c=>{const cl=gC(c.cid),s=gS(c.sid); return(
+                  <div key={c.id} style={{display:"flex",alignItems:"center",gap:"8px",padding:"8px 0",borderBottom:"1px solid var(--b1)"}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:".81rem",color:"var(--cream)",fontWeight:500}}>{cl?.nombre}</div>
+                      <div style={{fontSize:".67rem",color:"var(--mut)"}}>{c.fecha.toLocaleDateString("es-ES",{day:"2-digit",month:"short"})} · {s?.nombre}</div>
+                    </div>
+                    <span style={{fontFamily:"var(--fd)",fontSize:".92rem",color:"var(--rose)"}}>{fmt(c.monto)}</span>
+                    <button className="btn btn-r btn-sm" onClick={()=>cobrar(c.id)}><Icon n="check" s={11}/></button>
+                  </div>
+                );})}
+              </div>
+              <div className="card">
+                <div style={{fontFamily:"var(--fd)",fontSize:"1rem",color:"var(--green)",fontWeight:500,marginBottom:"12px"}}>● Cobradas</div>
+                {citas.filter(c=>c.estado==="cobrada").sort((a,b)=>b.fecha-a.fecha).map(c=>{const cl=gC(c.cid),s=gS(c.sid); return(
+                  <div key={c.id} style={{display:"flex",alignItems:"center",gap:"8px",padding:"8px 0",borderBottom:"1px solid var(--b1)"}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:".81rem",color:"var(--cream)",fontWeight:500}}>{cl?.nombre}</div>
+                      <div style={{fontSize:".67rem",color:"var(--mut)"}}>{c.fecha.toLocaleDateString("es-ES",{day:"2-digit",month:"short"})} · {s?.nombre}</div>
+                    </div>
+                    <span style={{fontFamily:"var(--fd)",fontSize:".92rem",color:"var(--green)"}}>{fmt(c.monto)}</span>
+                  </div>
+                );})}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══ SERVICIOS ══ */}
+        {tab==="servicios" && (
+          <div className="page">
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"7px"}}>
+              <div><div className="pt">Servicios</div><div className="ps">{servicios.length} servicios · catálogo de tratamientos</div></div>
+              <button className="btn btn-r" style={{marginTop:"8px"}} onClick={()=>setSModal(true)}><Icon n="plus" s={13}/>Añadir servicio</button>
+            </div>
+            <div className="sg">
+              {servicios.map(s=>(
+                <div key={s.id} className="sc-card">
+                  <span className="sc-ico">{s.icon}</span>
+                  <div className="sc-nm">{s.nombre}</div>
+                  <div className="sc-dc">{s.desc}</div>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
+                    <div>
+                      <div className="sc-pr">{fmt(s.precio)}</div>
+                    </div>
+                    <div style={{textAlign:"right"}}>
+                      <div style={{fontSize:".63rem",color:"var(--mut)",textTransform:"uppercase",letterSpacing:".07em"}}>Sesiones</div>
+                      <div style={{fontFamily:"var(--fd)",fontSize:".95rem",color:"var(--mut2)"}}>{citas.filter(c=>c.sid===s.id).length}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ══ BONOS ══ */}
+        {tab==="bonos" && (
+          <div className="page">
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"7px"}}>
+              <div><div className="pt">Bonos</div><div className="ps">Packs de sesiones · gestión y seguimiento</div></div>
+              <button className="btn btn-r" style={{marginTop:"8px"}} onClick={()=>setBModal(true)}><Icon n="plus" s={13}/>Vender bono</button>
+            </div>
+            <div className="card" style={{marginBottom:"18px"}}>
+              <div style={{fontFamily:"var(--fd)",fontSize:"1rem",color:"var(--cream)",fontWeight:500,marginBottom:"14px"}}>
+                Precios de bonos <span style={{fontSize:".7rem",color:"var(--mut)",fontFamily:"var(--fb)",fontWeight:400,marginLeft:"6px"}}>— edita el precio de cada pack</span>
+              </div>
+              <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:".8rem"}}>
+                  <thead><tr>{["Servicio","Individual","Bono 3","Bono 5","Bono 10"].map(h=>(
+                    <th key={h} style={{textAlign:h==="Servicio"?"left":"center",padding:"6px 9px",fontSize:".65rem",color:"var(--mut)",textTransform:"uppercase",letterSpacing:".08em",borderBottom:"1px solid var(--b1)",whiteSpace:"nowrap"}}>{h}</th>
+                  ))}</tr></thead>
+                  <tbody>{servicios.map((s,i)=>(
+                    <tr key={s.id} style={{borderBottom:i<servicios.length-1?"1px solid var(--b1)":"none"}}>
+                      <td style={{padding:"10px 9px"}}><div style={{display:"flex",alignItems:"center",gap:"7px"}}><span>{s.icon}</span><span style={{color:"var(--cream)",fontWeight:500}}>{s.nombre}</span></div></td>
+                      <td style={{padding:"10px 9px",textAlign:"center"}}><span style={{fontFamily:"var(--fd)",fontSize:".95rem",color:"var(--mut2)"}}>{fmt(s.precio)}</span></td>
+                      {[["s3",3],["s5",5],["s10",10]].map(([key,n])=>{
+                        const val=bonoPrices[s.id]?.[key]||"";
+                        const ahorro=val&&s.precio?Math.round((s.precio*n-parseFloat(val))/(s.precio*n)*100):0;
+                        return(
+                          <td key={key} style={{padding:"7px 9px",textAlign:"center"}}>
+                            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"3px"}}>
+                              <div style={{display:"flex",alignItems:"center",gap:"3px"}}>
+                                <input type="number" min="0" placeholder="—" value={val}
+                                  onChange={e=>updateBP(s.id,key,e.target.value)}
+                                  style={{width:"78px",textAlign:"center",fontFamily:"var(--fd)",fontSize:".95rem",color:"var(--rose)",background:"var(--card2)",border:"1px solid var(--b2)",borderRadius:"6px",padding:"4px 7px",outline:"none"}}/>
+                                <span style={{fontSize:".74rem",color:"var(--mut)"}}>€</span>
+                              </div>
+                              {val&&ahorro>0&&<span style={{fontSize:".61rem",color:"var(--green)",background:"rgba(122,170,136,.12)",padding:"1px 5px",borderRadius:"9px",border:"1px solid rgba(122,170,136,.2)"}}>-{ahorro}%</span>}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            </div>
+            <div style={{fontFamily:"var(--fd)",fontSize:"1rem",color:"var(--cream)",fontWeight:500,marginBottom:"12px"}}>Bonos activos <span style={{fontSize:".72rem",color:"var(--mut)",fontFamily:"var(--fb)",fontWeight:400,marginLeft:"5px"}}>{bonosV.length} vendidos</span></div>
+            {bonosV.length===0
+              ? <div style={{textAlign:"center",padding:"34px",color:"var(--mut)",fontSize:".81rem",background:"var(--card)",borderRadius:"12px",border:"1px solid var(--b1)"}}>Aún no has vendido ningún bono</div>
+              : <div style={{display:"flex",flexDirection:"column",gap:"9px"}}>
+                {bonosV.map(b=>{const cl=gC(b.cid),s=gS(b.sid); const rest=b.sesiones-b.usadas; const pct=(b.usadas/b.sesiones)*100; return(
+                  <div key={b.id} style={{background:"var(--card)",border:"1px solid var(--b1)",borderRadius:"11px",padding:"15px 17px",opacity:rest===0?.6:1}}>
+                    <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+                      <div style={{width:"38px",height:"38px",borderRadius:"50%",background:"linear-gradient(135deg,var(--rose),var(--blue))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1rem",flexShrink:0}}>{s?.icon}</div>
+                      <div style={{flex:1}}>
+                        <div style={{display:"flex",alignItems:"center",gap:"7px",marginBottom:"2px"}}>
+                          <span style={{fontWeight:500,fontSize:".86rem",color:"var(--cream)"}}>{cl?.nombre}</span>
+                          <span style={{fontSize:".7rem",color:"var(--mut)"}}>· {s?.nombre} · bono {b.sesiones}</span>
+                        </div>
+                        <div style={{display:"flex",alignItems:"center",gap:"9px"}}>
+                          <div style={{flex:1,height:"4px",background:"var(--b1)",borderRadius:"2px",overflow:"hidden"}}>
+                            <div style={{height:"100%",borderRadius:"2px",width:`${pct}%`,background:rest===0?"var(--mut)":pct>60?"var(--amb)":"var(--blue)",transition:"width .3s"}}/>
+                          </div>
+                          <span style={{fontSize:".7rem",color:"var(--mut)",whiteSpace:"nowrap"}}>{b.usadas}/{b.sesiones} · {rest} restantes</span>
+                        </div>
+                      </div>
+                      <div style={{textAlign:"right",flexShrink:0}}>
+                        <div style={{fontFamily:"var(--fd)",fontSize:"1.05rem",color:"var(--rose)"}}>{fmt(b.precio)}</div>
+                        <div style={{fontSize:".65rem",color:"var(--mut)"}}>{b.fecha.toLocaleDateString("es-ES",{day:"2-digit",month:"short",year:"2-digit"})}</div>
+                      </div>
+                      <div style={{display:"flex",flexDirection:"column",gap:"4px",flexShrink:0}}>
+                        {rest>0&&<button className="btn btn-o btn-sm" onClick={()=>usarBono(b.id)} style={{whiteSpace:"nowrap"}}><Icon n="minus" s={11}/>Usar</button>}
+                        {!b.cobrado&&<button className="btn btn-r btn-sm" onClick={()=>cobrarBono(b.id)} style={{whiteSpace:"nowrap"}}><Icon n="check" s={11}/>Cobrar</button>}
+                        {b.cobrado&&<span style={{fontSize:".68rem",color:"var(--green)",display:"flex",alignItems:"center",gap:"2px"}}><Icon n="check" s={11}/>Cobrado</span>}
+                      </div>
+                    </div>
+                  </div>
+                );})}
+              </div>
+            }
+          </div>
+        )}
+
+        {/* ══ MI ENLACE ══ */}
+        {tab==="enlace" && (
+          <div className="page">
+            <div className="pt">Mi Enlace</div>
+            <div className="ps">Comparte este enlace con tus clientas para reservar</div>
+            <div style={{maxWidth:"580px"}}>
+              <div className="card" style={{marginBottom:"16px"}}>
+                <div style={{fontSize:".66rem",color:"var(--mut)",textTransform:"uppercase",letterSpacing:".1em",marginBottom:"10px"}}>Enlace de reservas</div>
+                <div className="lu">{LINK}</div>
+                <div style={{display:"flex",gap:"8px",marginTop:"13px"}}>
+                  <button className="btn btn-r" onClick={()=>{navigator.clipboard.writeText(LINK).catch(()=>{}); setCopied(true); setTimeout(()=>setCopied(false),2200);}}>
+                    <Icon n="copy" s={13}/>{copied?"¡Copiado! ✓":"Copiar enlace"}
+                  </button>
+                  <button className="btn btn-o" onClick={()=>window.open(LINK,"_blank")}><Icon n="external-link" s={13}/>Abrir</button>
+                </div>
+              </div>
+              <div className="card">
+                <div style={{fontFamily:"var(--fd)",fontSize:".93rem",color:"var(--cream)",fontWeight:500,marginBottom:"11px"}}>Compartir</div>
+                <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+                  {["💬 WhatsApp","📧 Email","📸 Instagram","📋 Bio link"].map(l=>(
+                    <button key={l} className="btn btn-o">{l}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* ── MODAL: Nueva cita ── */}
+      {ncModal&&(
+        <div className="ov" onClick={()=>setNcModal(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modt">Nueva cita</div>
+            <div className="fg"><label className="fl">Clienta</label>
+              <select className="inp" value={ncForm.cid} onChange={e=>setNcForm(p=>({...p,cid:e.target.value}))}>
+                <option value="">Seleccionar clienta...</option>
+                {clientes.map(c=><option key={c.id} value={c.id}>{c.nombre}</option>)}
+              </select>
+            </div>
+            <div className="fg"><label className="fl">Servicio</label>
+              <select className="inp" value={ncForm.sid} onChange={e=>setNcForm(p=>({...p,sid:e.target.value}))}>
+                <option value="">Seleccionar servicio...</option>
+                {servicios.map(s=><option key={s.id} value={s.id}>{s.icon} {s.nombre} — {fmt(s.precio)}</option>)}
+              </select>
+            </div>
+            <div className="fr">
+              <div className="fg"><label className="fl">Fecha</label><input type="date" className="inp" value={ncForm.fecha} onChange={e=>setNcForm(p=>({...p,fecha:e.target.value}))}/></div>
+              <div className="fg"><label className="fl">Hora</label><input type="time" className="inp" value={ncForm.hora} onChange={e=>setNcForm(p=>({...p,hora:e.target.value}))}/></div>
+            </div>
+            <div style={{background:"var(--surf)",border:"1px solid var(--b1)",borderRadius:"9px",padding:"13px",marginBottom:"12px"}}>
+              <div style={{fontSize:".7rem",color:"var(--mut2)",textTransform:"uppercase",letterSpacing:".08em",marginBottom:"11px",fontWeight:500}}>Extras</div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid var(--b1)"}}>
+                <div><div style={{fontSize:".82rem",color:"var(--cream)",fontWeight:500}}>🚗 Desplazamiento a domicilio</div><div style={{fontSize:".7rem",color:"var(--mut)",marginTop:"1px"}}>+20€</div></div>
+                <div onClick={()=>setNcForm(p=>({...p,domicilio:!p.domicilio}))} style={{width:"38px",height:"21px",borderRadius:"11px",cursor:"pointer",transition:"background .2s",background:ncForm.domicilio?"var(--rose)":"var(--b2)",position:"relative",flexShrink:0}}>
+                  <div style={{position:"absolute",top:"3px",width:"15px",height:"15px",borderRadius:"50%",background:"white",transition:"left .2s",left:ncForm.domicilio?"20px":"3px"}}/>
+                </div>
+              </div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 0"}}>
+                <div><div style={{fontSize:".82rem",color:"var(--cream)",fontWeight:500}}>⏱ Extra</div><div style={{fontSize:".7rem",color:"var(--mut)",marginTop:"1px"}}>Importe adicional</div></div>
+                <div style={{display:"flex",alignItems:"center",gap:"5px"}}>
+                  <span style={{fontFamily:"var(--fd)",fontSize:".95rem",color:"var(--rose)"}}>+</span>
+                  <input type="number" min="0" placeholder="0" className="inp" value={ncForm.extra} onChange={e=>setNcForm(p=>({...p,extra:e.target.value}))} style={{width:"84px",textAlign:"right",fontFamily:"var(--fd)",fontSize:".95rem",color:"var(--rose)"}}/>
+                  <span style={{fontSize:".78rem",color:"var(--mut)"}}>€</span>
+                </div>
+              </div>
+            </div>
+            {ncForm.sid&&(()=>{
+              const s=gS(parseInt(ncForm.sid));
+              const extra=parseFloat(ncForm.extra)||0;
+              const total=(s?.precio||0)+(ncForm.domicilio?20:0)+extra;
+              return(
+                <div style={{background:"rgba(232,196,184,.07)",border:"1px solid rgba(232,196,184,.18)",borderRadius:"8px",padding:"11px 13px",marginBottom:"12px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:".78rem",color:"var(--mut2)",marginBottom:"3px"}}><span>{s?.nombre}</span><span>{fmt(s?.precio)}</span></div>
+                  {ncForm.domicilio&&<div style={{display:"flex",justifyContent:"space-between",fontSize:".78rem",color:"var(--mut2)",marginBottom:"3px"}}><span>Domicilio</span><span>+20€</span></div>}
+                  {extra>0&&<div style={{display:"flex",justifyContent:"space-between",fontSize:".78rem",color:"var(--mut2)",marginBottom:"3px"}}><span>Extra</span><span>+{fmt(extra)}</span></div>}
+                  <div style={{borderTop:"1px solid rgba(232,196,184,.15)",paddingTop:"7px",marginTop:"3px",display:"flex",justifyContent:"flex-end"}}>
+                    <span style={{fontFamily:"var(--fd)",fontSize:"1.25rem",color:"var(--rose)",fontWeight:600}}>{fmt(total)}</span>
+                  </div>
+                </div>
+              );
+            })()}
+            <div style={{display:"flex",gap:"8px",justifyContent:"flex-end"}}>
+              <button className="btn btn-o" onClick={()=>setNcModal(false)}>Cancelar</button>
+              <button className="btn btn-r" onClick={addCita}>Guardar cita</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Nueva clienta ── */}
+      {clModal&&(
+        <div className="ov" onClick={()=>setClModal(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modt">Nueva clienta</div>
+            <div className="fg"><label className="fl">Nombre completo *</label><input className="inp" value={clForm.nombre} onChange={e=>setClForm(p=>({...p,nombre:e.target.value}))} placeholder="Nombre y apellidos..."/></div>
+            <div className="fr">
+              <div className="fg"><label className="fl">Teléfono</label><input className="inp" value={clForm.tel} onChange={e=>setClForm(p=>({...p,tel:e.target.value}))} placeholder="+34 6XX XXX XXX"/></div>
+              <div className="fg"><label className="fl">Email</label><input type="email" className="inp" value={clForm.email} onChange={e=>setClForm(p=>({...p,email:e.target.value}))} placeholder="correo@email.com"/></div>
+            </div>
+            <div className="fr">
+              <div className="fg"><label className="fl">Sede</label>
+                <select className="inp" value={clForm.sede} onChange={e=>setClForm(p=>({...p,sede:e.target.value}))}>
+                  <option>Valencia</option><option>Alicante</option>
+                </select>
+              </div>
+              <div className="fg"><label className="fl">Servicio favorito</label>
+                <select className="inp" value={clForm.fav} onChange={e=>setClForm(p=>({...p,fav:e.target.value}))}>
+                  <option value="">Sin preferencia</option>
+                  {servicios.map(s=><option key={s.id} value={s.id}>{s.icon} {s.nombre}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="fg"><label className="fl">Notas / Avisos</label><textarea className="inp" value={clForm.notas} onChange={e=>setClForm(p=>({...p,notas:e.target.value}))} placeholder="Alergias, preferencias, observaciones..."/></div>
+            <div style={{display:"flex",gap:"8px",justifyContent:"flex-end",marginTop:"16px"}}>
+              <button className="btn btn-o" onClick={()=>setClModal(false)}>Cancelar</button>
+              <button className="btn btn-r" onClick={addCliente}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Añadir servicio ── */}
+      {sModal&&(
+        <div className="ov" onClick={()=>setSModal(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modt">Nuevo servicio</div>
+            <div className="fr">
+              <div className="fg"><label className="fl">Icono</label><input className="inp" value={sForm.icon} onChange={e=>setSForm(p=>({...p,icon:e.target.value}))} placeholder="✂️"/></div>
+              <div className="fg"><label className="fl">Nombre</label><input className="inp" value={sForm.nombre} onChange={e=>setSForm(p=>({...p,nombre:e.target.value}))} placeholder="Nombre del servicio..."/></div>
+            </div>
+            <div className="fg"><label className="fl">Precio (€)</label><input type="number" className="inp" value={sForm.precio} onChange={e=>setSForm(p=>({...p,precio:e.target.value}))} placeholder="200"/></div>
+            <div className="fg"><label className="fl">Descripción</label><textarea className="inp" value={sForm.desc} onChange={e=>setSForm(p=>({...p,desc:e.target.value}))} placeholder="Breve descripción del servicio..."/></div>
+            <div style={{display:"flex",gap:"8px",justifyContent:"flex-end",marginTop:"16px"}}>
+              <button className="btn btn-o" onClick={()=>setSModal(false)}>Cancelar</button>
+              <button className="btn btn-r" onClick={addServicio}>Añadir</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Vender bono ── */}
+      {bModal&&(
+        <div className="ov" onClick={()=>setBModal(false)}>
+          <div className="modal" style={{maxWidth:"400px"}} onClick={e=>e.stopPropagation()}>
+            <div className="modt">Vender bono</div>
+            <div className="fg"><label className="fl">Clienta</label>
+              <select className="inp" value={bForm.cid} onChange={e=>setBForm(p=>({...p,cid:e.target.value}))}>
+                <option value="">Seleccionar clienta...</option>
+                {clientes.map(c=><option key={c.id} value={c.id}>{c.nombre}</option>)}
+              </select>
+            </div>
+            <div className="fg"><label className="fl">Servicio</label>
+              <select className="inp" value={bForm.sid} onChange={e=>setBForm(p=>({...p,sid:e.target.value}))}>
+                <option value="">Seleccionar servicio...</option>
+                {servicios.map(s=><option key={s.id} value={s.id}>{s.icon} {s.nombre}</option>)}
+              </select>
+            </div>
+            <div className="fg"><label className="fl">Pack</label>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"7px"}}>
+                {[["3","Bono 3"],["5","Bono 5"],["10","Bono 10"]].map(([val,label])=>{
+                  const sid=parseInt(bForm.sid), key=val==="3"?"s3":val==="5"?"s5":"s10";
+                  const precio=sid?(parseFloat(bonoPrices[sid]?.[key])||0):0;
+                  const sel=bForm.sesiones===val;
+                  return(
+                    <div key={val} onClick={()=>setBForm(p=>({...p,sesiones:val}))} style={{border:`1px solid ${sel?"var(--rose)":"var(--b2)"}`,background:sel?"rgba(232,196,184,.08)":"var(--card2)",borderRadius:"8px",padding:"11px 7px",textAlign:"center",cursor:"pointer",transition:"all .15s"}}>
+                      <div style={{fontFamily:"var(--fd)",fontSize:"1rem",color:sel?"var(--rose)":"var(--cream)",fontWeight:600}}>{label}</div>
+                      <div style={{fontSize:".68rem",color:"var(--mut)",marginTop:"1px"}}>{val} sesiones</div>
+                      {precio>0?<div style={{fontFamily:"var(--fd)",fontSize:".9rem",color:sel?"var(--rose)":"var(--mut2)",marginTop:"4px"}}>{fmt(precio)}</div>:<div style={{fontSize:".65rem",color:"var(--mut)",fontStyle:"italic",marginTop:"4px"}}>Sin precio</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div style={{display:"flex",gap:"8px",justifyContent:"flex-end",marginTop:"16px"}}>
+              <button className="btn btn-o" onClick={()=>setBModal(false)}>Cancelar</button>
+              <button className="btn btn-r" onClick={venderBono}>Vender bono</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Detalle clienta ── */}
+      {selCl&&(
+        <div className="ov" onClick={()=>setSelCl(null)}>
+          <div className="modal" style={{maxWidth:"540px"}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",gap:"13px",alignItems:"flex-start",marginBottom:"16px"}}>
+              <div className="av" style={{width:"44px",height:"44px",fontSize:"1.05rem"}}>{selCl.nombre.charAt(0)}</div>
+              <div style={{flex:1}}>
+                <div className="modt" style={{marginBottom:"2px"}}>{selCl.nombre}</div>
+                <div style={{display:"flex",gap:"12px",fontSize:".74rem",color:"var(--mut2)"}}>
+                  <span>📞 {selCl.tel}</span><span>✉️ {selCl.email}</span><span>📍 {selCl.sede||"Valencia"}</span>
+                </div>
+              </div>
+              <button className="btn-gh" onClick={()=>setSelCl(null)}><Icon n="x" s={14}/></button>
+            </div>
+            {selCl.notas&&<div style={{background:"rgba(201,148,76,.1)",border:"1px solid rgba(201,148,76,.2)",borderRadius:"7px",padding:"8px 12px",fontSize:".78rem",color:"var(--amb)",marginBottom:"13px"}}>⚠️ {selCl.notas}</div>}
+            <div style={{display:"flex",gap:"12px",marginBottom:"16px"}}>
+              {[{l:"Facturado",v:fmt(clTotal(selCl.id)),c:"var(--rose)"},{l:"Visitas",v:clCitas(selCl.id).length,c:"var(--cream)"},{l:"Favorito",v:gS(selCl.fav)?.nombre||"—",c:"var(--mut2)"}].map(x=>(
+                <div key={x.l} style={{flex:1,textAlign:"center",background:"var(--surf)",borderRadius:"7px",padding:"10px"}}>
+                  <div style={{fontSize:".63rem",color:"var(--mut)",textTransform:"uppercase",letterSpacing:".08em",marginBottom:"2px"}}>{x.l}</div>
+                  <div style={{fontFamily:"var(--fd)",fontSize:"1rem",color:x.c,fontWeight:500}}>{x.v}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{fontFamily:"var(--fd)",fontSize:".88rem",color:"var(--cream)",fontWeight:500,marginBottom:"9px"}}>Historial</div>
+            <div style={{maxHeight:"230px",overflowY:"auto"}}>
+              {clCitas(selCl.id).sort((a,b)=>b.fecha-a.fecha).map(c=>{const s=gS(c.sid); return(
+                <div key={c.id} style={{display:"flex",alignItems:"center",gap:"10px",padding:"8px 0",borderBottom:"1px solid var(--b1)"}}>
+                  <div style={{fontSize:".67rem",color:"var(--mut)",minWidth:"64px"}}>{c.fecha.toLocaleDateString("es-ES",{day:"2-digit",month:"short",year:"2-digit"})}</div>
+                  <div style={{flex:1,fontSize:".79rem",color:"var(--cream)"}}>{s?.icon} {s?.nombre}</div>
+                  <span className={`badge ${c.estado}`}>{c.estado}</span>
+                  <span style={{fontFamily:"var(--fd)",fontSize:".88rem",color:"var(--rose)"}}>{fmt(c.monto)}</span>
+                </div>
+              );})}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
