@@ -177,6 +177,7 @@ input[type=date],input[type=time]{color-scheme:dark}
 
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--surf)}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+@keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
 </style>
 </head>
 <body>
@@ -521,7 +522,6 @@ function App() {
       <div style={{display:"flex",gap:"5px",marginTop:"8px"}}>
         {[0,1,2].map(i=><div key={i} style={{width:"6px",height:"6px",borderRadius:"50%",background:"var(--rose)",opacity:.4,animation:`pulse 1.2s ease-in-out ${i*.2}s infinite`}}/>)}
       </div>
-      <style>{`@keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}`}</style>
     </div>
   );
 
