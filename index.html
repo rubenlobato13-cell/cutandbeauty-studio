@@ -817,8 +817,8 @@ function App() {
                   <span className={`badge ${c.estado}`}>{c.estado}</span>
                   {c.tipoPago&&<span style={{fontSize:".67rem",color:"var(--mut2)",background:"var(--card2)",border:"1px solid var(--b2)",borderRadius:"5px",padding:"2px 7px"}}>
                     {c.tipoPago==="fraccionado"
-                      ? `🔀 ${c.pagos?.map(p=>`${p.metodo==="efectivo"?"💵":p.metodo==="bizum"?"📱":"💳"}${fmt(p.importe)}`).join(" + ")}`
-                      : `${c.tipoPago==="efectivo"?"💵":c.tipoPago==="bizum"?"📱":"💳"} ${c.tipoPago}`}
+                      ? "🔀 " + (c.pagos||[]).map(p=>(p.metodo==="efectivo"?"💵":p.metodo==="bizum"?"📱":"💳")+" "+fmt(p.importe)).join(" + ")
+                      : (c.tipoPago==="efectivo"?"💵":c.tipoPago==="bizum"?"📱":"💳")+" "+c.tipoPago}
                   </span>}
                   <div style={{fontFamily:"var(--fd)",fontSize:"1rem",color:"var(--rose)",minWidth:"46px",textAlign:"right"}}>{fmt(c.monto)}</div>
                   <div style={{display:"flex",gap:"5px",justifyContent:"flex-end"}}>
