@@ -225,6 +225,7 @@ function App() {
   const [selDay,setSelDay]  = useState(HOY);
   const [filtro,setFiltro]  = useState("todas");
   const [busq,setBusq]      = useState("");
+  const [busqCl,setBusqCl] = useState("");
 
   const [selCl,setSelCl]    = useState(null);
   const [ncModal,setNcModal]= useState(false);
@@ -621,10 +622,17 @@ function App() {
               <div><div className="pt">Clientes</div><div className="ps">{clientes.length} clientas registradas</div></div>
               <button className="btn btn-r" style={{marginTop:"8px"}} onClick={()=>setClModal(true)}><Icon n="plus" s={13}/>Nueva clienta</button>
             </div>
-            {clientes.length===0
-              ? <div style={{textAlign:"center",padding:"40px",color:"var(--mut)",background:"var(--card)",borderRadius:"12px",border:"1px solid var(--b1)"}}>Aún no hay clientas · añade la primera</div>
-              : <div className="clg">
-                {clientes.map(cl=>{const tot=clTotal(cl.id),nc=clCitas(cl.id).length,s=gS(cl.fav); return(
+            <div style={{position:"relative",marginBottom:"16px"}}>
+              <Icon n="search" s={14} style={{position:"absolute",left:"11px",top:"50%",transform:"translateY(-50%)",color:"var(--mut)",pointerEvents:"none"}}/>
+              <input className="inp" placeholder="Buscar por nombre, email o teléfono..." value={busqCl} onChange={e=>setBusqCl(e.target.value)} style={{paddingLeft:"32px"}}/>
+            </div>
+            {(()=>{
+              const q=busqCl.toLowerCase();
+              const lista=busqCl?clientes.filter(c=>c.nombre.toLowerCase().includes(q)||c.email?.toLowerCase().includes(q)||c.tel?.includes(q)):clientes;
+              return lista.length===0
+                ? <div style={{textAlign:"center",padding:"36px",color:"var(--mut)",background:"var(--card)",borderRadius:"12px",border:"1px solid var(--b1)"}}>No se encontró ninguna clienta con «{busqCl}»</div>
+                : <div className="clg">
+                {lista.map(cl=>{const tot=clTotal(cl.id),nc=clCitas(cl.id).length,s=gS(cl.fav); return(
                   <div key={cl.id} className="clc" onClick={()=>setSelCl(cl)}>
                     <div style={{display:"flex",gap:"12px",alignItems:"flex-start"}}>
                       <div className="av">{cl.nombre.charAt(0)}</div>
@@ -644,8 +652,8 @@ function App() {
                     </div>
                   </div>
                 );})}
-              </div>
-            }
+              </div>;
+            })()}
           </div>
         )}
 
