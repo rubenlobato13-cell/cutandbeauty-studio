@@ -520,7 +520,7 @@ function App() {
       <div style={{fontFamily:"var(--fd)",fontSize:".7rem",color:"var(--gold)",letterSpacing:".2em"}}>AND</div>
       <div style={{fontFamily:"var(--fd)",fontSize:"1.2rem",color:"var(--blue)"}}>BEAUTY</div>
       <div style={{display:"flex",gap:"5px",marginTop:"8px"}}>
-        {[0,1,2].map(i=><div key={i} style={{width:"6px",height:"6px",borderRadius:"50%",background:"var(--rose)",opacity:.4,animation:`pulse 1.2s ease-in-out ${i*.2}s infinite`}}/>)}
+        {[0,1,2].map(i=><div key={i} style={{width:"6px",height:"6px",borderRadius:"50%",background:"var(--rose)",opacity:.4,animation:"pulse 1.2s ease-in-out "+(i*.2)+"s infinite"}}/>)}
       </div>
     </div>
   );
