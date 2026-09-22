@@ -270,7 +270,14 @@ function App() {
   const gS = id => servicios.find(s=>s.id===id);
   const gC = id => clientes.find(c=>c.id===id);
 
-  const cobrar   = id => { const n=citas.map(c=>c.id===id?{...c,estado:"cobrada"}:c);   setCitas(n); save("citas",n); };
+  const [pagModal, setPagModal] = useState(null);
+  const abrirCobro = (id) => setPagModal({id, tipo:"efectivo"});
+  const cobrar = () => {
+    if (!pagModal) return;
+    const n = citas.map(c => c.id===pagModal.id ? {...c, estado:"cobrada", tipoPago:pagModal.tipo} : c);
+    setCitas(n); save("citas",n);
+    setPagModal(null);
+  };
   const cancelar = id => { const n=citas.map(c=>c.id===id?{...c,estado:"cancelada"}:c); setCitas(n); save("citas",n); };
 
   const citasHoy = useMemo(()=>citas.filter(c=>isSameDay(c.fecha,HOY)).sort((a,b)=>a.fecha-b.fecha),[citas]);
@@ -441,7 +448,7 @@ function App() {
                       <div style={{display:"flex",alignItems:"center",gap:"7px"}}>
                         <span className={`badge ${c.estado}`}>{c.estado}</span>
                         <span style={{fontFamily:"var(--fd)",fontSize:".92rem",color:"var(--rose)"}}>{fmt(c.monto)}</span>
-                        {c.estado==="pendiente"&&<button className="btn btn-r btn-sm" onClick={()=>cobrar(c.id)}><Icon n="check" s={11}/>Cobrar</button>}
+                        {c.estado==="pendiente"&&<button className="btn btn-r btn-sm" onClick={()=>abrirCobro(c.id)}><Icon n="check" s={11}/>Cobrar</button>}
                       </div>
                     </div>
                   );})}
@@ -519,7 +526,7 @@ function App() {
                         <span style={{fontSize:".72rem",color:"var(--mut2)"}}>{s?.icon} {s?.nombre}</span>
                         <span style={{fontFamily:"var(--fd)",fontSize:".88rem",color:"var(--rose)",marginLeft:"auto"}}>{fmt(c.monto)}</span>
                       </div>
-                      {c.estado==="pendiente"&&<div style={{paddingLeft:"47px"}}><button className="btn btn-r btn-sm" onClick={()=>cobrar(c.id)}><Icon n="check" s={11}/>Cobrar</button></div>}
+                      {c.estado==="pendiente"&&<div style={{paddingLeft:"47px"}}><button className="btn btn-r btn-sm" onClick={()=>abrirCobro(c.id)}><Icon n="check" s={11}/>Cobrar</button></div>}
                     </div>
                   );})}
                   </div>
@@ -565,10 +572,11 @@ function App() {
                     <div style={{fontSize:".71rem",color:"var(--mut2)"}}>{s?.icon} {s?.nombre}{c.domicilio?" · 🚗":""}{c.extra>0?` · +${fmt(c.extra)} extra`:""}</div>
                   </div>
                   <span className={`badge ${c.estado}`}>{c.estado}</span>
+                  {c.tipoPago&&<span style={{fontSize:".67rem",color:"var(--mut2)",background:"var(--card2)",border:"1px solid var(--b2)",borderRadius:"5px",padding:"2px 7px"}}>{c.tipoPago==="efectivo"?"💵":c.tipoPago==="bizum"?"📱":"💳"} {c.tipoPago}</span>}
                   <div style={{fontFamily:"var(--fd)",fontSize:"1rem",color:"var(--rose)",minWidth:"46px",textAlign:"right"}}>{fmt(c.monto)}</div>
                   <div style={{display:"flex",gap:"5px",minWidth:"106px",justifyContent:"flex-end"}}>
                     {c.estado==="pendiente"&&<>
-                      <button className="btn btn-r btn-sm" onClick={()=>cobrar(c.id)}><Icon n="check" s={11}/>Cobrar</button>
+                      <button className="btn btn-r btn-sm" onClick={()=>abrirCobro(c.id)}><Icon n="check" s={11}/>Cobrar</button>
                       <button className="btn btn-o btn-sm" onClick={()=>cancelar(c.id)}><Icon n="x" s={11}/></button>
                     </>}
                   </div>
@@ -643,7 +651,7 @@ function App() {
                       <div style={{fontSize:".67rem",color:"var(--mut)"}}>{c.fecha.toLocaleDateString("es-ES",{day:"2-digit",month:"short"})} · {s?.nombre}</div>
                     </div>
                     <span style={{fontFamily:"var(--fd)",fontSize:".92rem",color:"var(--rose)"}}>{fmt(c.monto)}</span>
-                    <button className="btn btn-r btn-sm" onClick={()=>cobrar(c.id)}><Icon n="check" s={11}/></button>
+                    <button className="btn btn-r btn-sm" onClick={()=>abrirCobro(c.id)}><Icon n="check" s={11}/></button>
                   </div>
                 );})}
               </div>
@@ -916,6 +924,32 @@ function App() {
             <div style={{display:"flex",gap:"8px",justifyContent:"flex-end",marginTop:"16px"}}>
               <button className="btn btn-o" onClick={()=>setSModal(false)}>Cancelar</button>
               <button className="btn btn-r" onClick={addServicio}>Añadir</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Método de pago ── */}
+      {pagModal&&(
+        <div className="ov" onClick={()=>setPagModal(null)}>
+          <div className="modal" style={{maxWidth:"360px"}} onClick={e=>e.stopPropagation()}>
+            <div className="modt">¿Cómo se ha pagado?</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"9px",marginBottom:"20px"}}>
+              {[
+                {id:"efectivo", label:"💵 Efectivo"},
+                {id:"bizum",    label:"📱 Bizum"},
+                {id:"tarjeta",  label:"💳 Tarjeta"},
+              ].map(m=>(
+                <div key={m.id} onClick={()=>setPagModal(p=>({...p,tipo:m.id}))}
+                  style={{border:`2px solid ${pagModal.tipo===m.id?"var(--rose)":"var(--b2)"}`,background:pagModal.tipo===m.id?"rgba(232,196,184,.1)":"var(--card2)",borderRadius:"9px",padding:"14px 8px",textAlign:"center",cursor:"pointer",transition:"all .15s"}}>
+                  <div style={{fontSize:"1.4rem",marginBottom:"5px"}}>{m.label.split(" ")[0]}</div>
+                  <div style={{fontSize:".78rem",color:pagModal.tipo===m.id?"var(--rose)":"var(--mut2)",fontWeight:500}}>{m.label.split(" ")[1]}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:"9px",justifyContent:"flex-end"}}>
+              <button className="btn btn-o" onClick={()=>setPagModal(null)}>Cancelar</button>
+              <button className="btn btn-r" onClick={cobrar}><Icon n="check" s={13}/>Confirmar cobro</button>
             </div>
           </div>
         </div>
