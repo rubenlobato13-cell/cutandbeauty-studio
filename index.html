@@ -351,9 +351,9 @@ function App() {
     const monto=Math.max(0,(s?.precio||0)+(ncForm.domicilio?20:0)+extra+totalAdicionales-descuento);
     let n;
     if(editCitaId) {
-      n=citas.map(c=>c.id===editCitaId?{...c,cid:parseInt(ncForm.cid),sid:parseInt(ncForm.sid),fecha,monto,domicilio:ncForm.domicilio,extra,descuento,adicionales:ncForm.adicionales||[]}:c);
+      n=citas.map(c=>(editCitaId!=null&&Number.isFinite(editCitaId)&&c.id===editCitaId)?{...c,cid:parseInt(ncForm.cid),sid:parseInt(ncForm.sid),fecha,monto,domicilio:ncForm.domicilio,extra,descuento,adicionales:ncForm.adicionales||[]}:c);
     } else {
-      const nid=citas.length?Math.max(...citas.map(c=>c.id))+1:1;
+      const ids=citas.map(c=>c.id).filter(x=>Number.isFinite(x));const nid=ids.length?Math.max(...ids)+1:1;
       n=[...citas,{id:nid,cid:parseInt(ncForm.cid),sid:parseInt(ncForm.sid),fecha,estado:"pendiente",monto,domicilio:ncForm.domicilio,extra,descuento,adicionales:ncForm.adicionales||[]}];
     }
     setCitas(n); save("citas",n);
@@ -449,7 +449,7 @@ function App() {
     const [h,mi]=confForm.hora.split(":").map(Number);
     const fecha=new Date(y,mo-1,d,h,mi);
     const sv=servicios.find(x=>x.nombre===s.masaje)||servicios[0];
-    const nid=citas.length?Math.max(...citas.map(c=>c.id))+1:1;
+    const ids=citas.map(c=>c.id).filter(x=>Number.isFinite(x));const nid=ids.length?Math.max(...ids)+1:1;
     let cl=clientes.find(c=>c.tel===s.tel||c.nombre.toLowerCase()===s.nombre.toLowerCase());
     let newCls=clientes;
     if(!cl){
