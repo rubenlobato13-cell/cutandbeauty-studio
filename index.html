@@ -247,12 +247,13 @@ function App() {
   const [editClId, setEditClId] = useState(null);
   const [sModal,setSModal]  = useState(false);
   const [bModal,setBModal]  = useState(false);
+  const [editBonoId,setEditBonoId]= useState(null);
   const [copied,setCopied]  = useState(false);
 
   const [ncForm,setNcForm]  = useState({cid:"",sid:"",fecha:"",hora:"",domicilio:false,extra:"",descuento:"",adicionales:[]});
   const [clForm,setClForm]  = useState({nombre:"",tel:"",email:"",fav:"",notas:"",sede:"Valencia"});
   const [sForm,setSForm]    = useState({icon:"✂️",nombre:"",precio:"",desc:""});
-  const [bForm,setBForm]    = useState({cid:"",sid:"",sesiones:"3"});
+  const [bForm,setBForm]    = useState({cid:"",sid:"",sesiones:"3",precioManual:""});
 
   const LINK = "https://cutandbeauty.org.es/reservas.html";
 
@@ -411,14 +412,32 @@ function App() {
   const updateBP = (sid,key,val) => { const n={...bonoPrices,[sid]:{...bonoPrices[sid],[key]:val}}; setBP(n); save("bonoPrices",n); };
 
   const venderBono = () => {
-    if(!bForm.cid||!bForm.sid) return;
+    if(!bForm.cid||!bForm.sid||!bForm.precioManual) return;
     const ses=parseInt(bForm.sesiones);
-    const precio=getBP(parseInt(bForm.sid),ses);
-    const nid=bonosV.length?Math.max(...bonosV.map(b=>b.id))+1:1;
-    const n=[...bonosV,{id:nid,cid:parseInt(bForm.cid),sid:parseInt(bForm.sid),sesiones:ses,usadas:0,precio,cobrado:false,fecha:new Date()}];
+    const precio=parseFloat(bForm.precioManual)||0;
+    let n;
+    if(editBonoId){
+      n=bonosV.map(b=>b.id===editBonoId?{...b,cid:parseInt(bForm.cid),sid:parseInt(bForm.sid),sesiones:ses,precio}:b);
+    } else {
+      const ids=bonosV.map(b=>b.id).filter(x=>Number.isFinite(x));
+      const nid=ids.length?Math.max(...ids)+1:1;
+      n=[...bonosV,{id:nid,cid:parseInt(bForm.cid),sid:parseInt(bForm.sid),sesiones:ses,usadas:0,precio,cobrado:false,fecha:new Date()}];
+    }
     setBonosV(n); save("bonos",n);
-    setBForm({cid:"",sid:"",sesiones:"3"});
+    setBForm({cid:"",sid:"",sesiones:"3",precioManual:""});
+    setEditBonoId(null);
     setBModal(false);
+  };
+
+  const abrirEditBono = (b) => {
+    setBForm({cid:String(b.cid),sid:String(b.sid),sesiones:String(b.sesiones),precioManual:String(b.precio)});
+    setEditBonoId(b.id);
+    setBModal(true);
+  };
+
+  const eliminarBono = (bid) => {
+    const n=bonosV.filter(b=>b.id!==bid);
+    setBonosV(n); save("bonos",n);
   };
   const usarBono = () => {
     if(!bonoSesModal||!bonoSesForm.fecha||!bonoSesForm.hora) return;
@@ -993,6 +1012,8 @@ function App() {
                         {rest>0&&<button className="btn btn-o btn-sm" onClick={()=>{setBonoSesModal(b);setBonoSesForm({fecha:"",hora:""})}} style={{whiteSpace:"nowrap"}}><Icon n="minus" s={11}/>Usar</button>}
                         {!b.cobrado&&<button className="btn btn-r btn-sm" onClick={()=>cobrarBono(b.id)} style={{whiteSpace:"nowrap"}}><Icon n="check" s={11}/>Cobrar</button>}
                         {b.cobrado&&<span style={{fontSize:".68rem",color:"var(--green)",display:"flex",alignItems:"center",gap:"2px"}}><Icon n="check" s={11}/>Cobrado</span>}
+                        <button className="btn btn-o btn-sm" onClick={()=>abrirEditBono(b)} style={{whiteSpace:"nowrap"}}><Icon n="pencil" s={11}/>Editar</button>
+                        <button className="btn btn-o btn-sm" onClick={()=>eliminarBono(b.id)} style={{whiteSpace:"nowrap",color:"var(--red)",borderColor:"rgba(184,98,98,.3)"}}><Icon n="trash" s={11}/>Borrar</button>
                       </div>
                     </div>
                   </div>
@@ -1400,11 +1421,11 @@ function App() {
         </div>
       )}
 
-      {/* ── MODAL: Vender bono ── */}
+      {/* ── MODAL: Vender / Editar bono ── */}
       {bModal&&(
-        <div className="ov" onClick={()=>setBModal(false)}>
+        <div className="ov" onClick={()=>{setBModal(false);setEditBonoId(null)}}>
           <div className="modal" style={{maxWidth:"400px"}} onClick={e=>e.stopPropagation()}>
-            <div className="modt">Vender bono</div>
+            <div className="modt">{editBonoId?"✏️ Editar bono":"Vender bono"}</div>
             <div className="fg"><label className="fl">Clienta</label>
               <select className="inp" value={bForm.cid} onChange={e=>setBForm(p=>({...p,cid:e.target.value}))}>
                 <option value="">Seleccionar clienta...</option>
@@ -1424,7 +1445,7 @@ function App() {
                   const precio=sid?(parseFloat(bonoPrices[sid]?.[key])||0):0;
                   const sel=bForm.sesiones===val;
                   return(
-                    <div key={val} onClick={()=>setBForm(p=>({...p,sesiones:val}))} style={{border:`1px solid ${sel?"var(--rose)":"var(--b2)"}`,background:sel?"rgba(232,196,184,.08)":"var(--card2)",borderRadius:"8px",padding:"11px 7px",textAlign:"center",cursor:"pointer",transition:"all .15s"}}>
+                    <div key={val} onClick={()=>setBForm(p=>({...p,sesiones:val,precioManual:String(precio||p.precioManual||"")}))} style={{border:`1px solid ${sel?"var(--rose)":"var(--b2)"}`,background:sel?"rgba(232,196,184,.08)":"var(--card2)",borderRadius:"8px",padding:"11px 7px",textAlign:"center",cursor:"pointer",transition:"all .15s"}}>
                       <div style={{fontFamily:"var(--fd)",fontSize:"1rem",color:sel?"var(--rose)":"var(--cream)",fontWeight:600}}>{label}</div>
                       <div style={{fontSize:".68rem",color:"var(--mut)",marginTop:"1px"}}>{val} sesiones</div>
                       {precio>0?<div style={{fontFamily:"var(--fd)",fontSize:".9rem",color:sel?"var(--rose)":"var(--mut2)",marginTop:"4px"}}>{fmt(precio)}</div>:<div style={{fontSize:".65rem",color:"var(--mut)",fontStyle:"italic",marginTop:"4px"}}>Sin precio</div>}
@@ -1433,9 +1454,19 @@ function App() {
                 })}
               </div>
             </div>
+            <div className="fg" style={{marginTop:"10px"}}>
+              <label className="fl">Precio total del bono (€) *</label>
+              <input type="number" min="0" className="inp" placeholder="Introduce el importe..."
+                value={bForm.precioManual||""} onChange={e=>setBForm(p=>({...p,precioManual:e.target.value}))}
+                style={{fontFamily:"var(--fd)",fontSize:"1.1rem",color:"var(--rose)"}}/>
+            </div>
+            {bForm.precioManual>0&&<div style={{background:"rgba(232,196,184,.07)",border:"1px solid rgba(232,196,184,.18)",borderRadius:"8px",padding:"10px 13px",marginBottom:"4px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span style={{fontSize:".8rem",color:"var(--mut2)"}}>{gS(parseInt(bForm.sid))?.nombre} × {bForm.sesiones} ses.</span>
+              <span style={{fontFamily:"var(--fd)",fontSize:"1.4rem",color:"var(--rose)",fontWeight:600}}>{fmt(bForm.precioManual)}</span>
+            </div>}
             <div style={{display:"flex",gap:"8px",justifyContent:"flex-end",marginTop:"16px"}}>
-              <button className="btn btn-o" onClick={()=>setBModal(false)}>Cancelar</button>
-              <button className="btn btn-r" onClick={venderBono}>Vender bono</button>
+              <button className="btn btn-o" onClick={()=>{setBModal(false);setEditBonoId(null);setBForm({cid:"",sid:"",sesiones:"3",precioManual:""})}}>Cancelar</button>
+              <button className="btn btn-r" onClick={venderBono} disabled={!bForm.cid||!bForm.sid||!bForm.precioManual}>{editBonoId?"Guardar cambios":"Vender bono"}</button>
             </div>
           </div>
         </div>
