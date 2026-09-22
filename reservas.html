@@ -5,7 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reserva tu cita · Cut and Beauty</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyBlnxD0fQIi_EYUF8iGSbVKTN7Y4E6A2PQ",
+  authDomain:"dosha-balance-bfdb0.firebaseapp.com",
+  projectId:"dosha-balance-bfdb0",
+  storageBucket:"dosha-balance-bfdb0.firebasestorage.app",
+  messagingSenderId:"1089942977481",
+  appId:"1:1089942977481:web:7e9cc7eab9962dd48d0618"
+});
+const db = firebase.firestore();
+</script>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#faf9fb;--white:#fff;
@@ -171,7 +183,7 @@ function sel(id,nom,precio){
   setTimeout(function(){f.scrollIntoView({behavior:'smooth',block:'start'})},100);
 }
 
-function enviar(){
+async function enviar(){
   var nom=document.getElementById('nom').value.trim();
   var tel=document.getElementById('tel').value.trim();
   var sede=document.getElementById('sede').value;
@@ -199,6 +211,18 @@ function enviar(){
 
   // CAMBIA ESTE NÚMERO POR EL TUYO
   var numero='34600000000';
+
+  async function guardarSolicitud(datos) {
+    try {
+      const doc = await db.collection('cutbeauty').doc('solicitudes').get();
+      const lista = doc.exists ? doc.data().data : [];
+      const nid = lista.length ? Math.max(...lista.map(s=>s.id))+1 : 1;
+      lista.push({...datos, id:nid, estado:'nueva', creado: Date.now()});
+      await db.collection('cutbeauty').doc('solicitudes').set({data: lista});
+    } catch(e) { console.warn('Firebase error:', e); }
+  }
+
+  await guardarSolicitud({nombre, tel, masaje:selNom, precio:selPrecio, sede, fecha, hora, notas});
   window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
   document.getElementById('form').style.display='none';
   document.getElementById('ok').style.display='block';
