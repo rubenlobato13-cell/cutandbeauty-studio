@@ -229,6 +229,7 @@ function App() {
 
   const [selCl,setSelCl]    = useState(null);
   const [ncModal,setNcModal]= useState(false);
+  const [editCitaId, setEditCitaId] = useState(null);
   const [clModal,setClModal]= useState(false);
   const [editClId, setEditClId] = useState(null);
   const [sModal,setSModal]  = useState(false);
@@ -331,11 +332,31 @@ function App() {
     const descuento=parseFloat(ncForm.descuento)||0;
     const totalAdicionales=(ncForm.adicionales||[]).reduce((s,a)=>s+(parseFloat(a.precio)||0),0);
     const monto=Math.max(0,(s?.precio||0)+(ncForm.domicilio?20:0)+extra+totalAdicionales-descuento);
-    const nid=citas.length?Math.max(...citas.map(c=>c.id))+1:1;
-    const n=[...citas,{id:nid,cid:parseInt(ncForm.cid),sid:parseInt(ncForm.sid),fecha,estado:"pendiente",monto,domicilio:ncForm.domicilio,extra,descuento,adicionales:ncForm.adicionales||[]}];
+    let n;
+    if(editCitaId) {
+      n=citas.map(c=>c.id===editCitaId?{...c,cid:parseInt(ncForm.cid),sid:parseInt(ncForm.sid),fecha,monto,domicilio:ncForm.domicilio,extra,descuento,adicionales:ncForm.adicionales||[]}:c);
+    } else {
+      const nid=citas.length?Math.max(...citas.map(c=>c.id))+1:1;
+      n=[...citas,{id:nid,cid:parseInt(ncForm.cid),sid:parseInt(ncForm.sid),fecha,estado:"pendiente",monto,domicilio:ncForm.domicilio,extra,descuento,adicionales:ncForm.adicionales||[]}];
+    }
     setCitas(n); save("citas",n);
     setNcForm({cid:"",sid:"",fecha:"",hora:"",domicilio:false,extra:"",descuento:"",adicionales:[]});
+    setEditCitaId(null);
     setNcModal(false);
+  };
+
+  const abrirEditCita = (c) => {
+    const pad=n=>String(n).padStart(2,"0");
+    setNcForm({
+      cid:String(c.cid), sid:String(c.sid),
+      fecha:`${c.fecha.getFullYear()}-${pad(c.fecha.getMonth()+1)}-${pad(c.fecha.getDate())}`,
+      hora:`${pad(c.fecha.getHours())}:${pad(c.fecha.getMinutes())}`,
+      domicilio:c.domicilio||false,
+      extra:c.extra||"", descuento:c.descuento||"",
+      adicionales:c.adicionales||[],
+    });
+    setEditCitaId(c.id);
+    setNcModal(true);
   };
 
   const addCliente = () => {
@@ -604,12 +625,13 @@ function App() {
                       : `${c.tipoPago==="efectivo"?"💵":c.tipoPago==="bizum"?"📱":"💳"} ${c.tipoPago}`}
                   </span>}
                   <div style={{fontFamily:"var(--fd)",fontSize:"1rem",color:"var(--rose)",minWidth:"46px",textAlign:"right"}}>{fmt(c.monto)}</div>
-                  <div style={{display:"flex",gap:"5px",minWidth:"106px",justifyContent:"flex-end"}}>
+                  <div style={{display:"flex",gap:"5px",justifyContent:"flex-end"}}>
+                    <button className="btn btn-o btn-sm" onClick={()=>abrirEditCita(c)} title="Editar cita"><Icon n="pencil" s={11}/></button>
                     {c.estado==="pendiente"&&<>
                       <button className="btn btn-r btn-sm" onClick={()=>abrirCobro(c.id)}><Icon n="check" s={11}/>Cobrar</button>
                       <button className="btn btn-o btn-sm" onClick={()=>cancelar(c.id)}><Icon n="x" s={11}/></button>
                     </>}
-                    {c.estado==="cobrada"&&<button className="btn btn-o btn-sm" onClick={()=>abrirCobro(c.id)}><Icon n="pencil" s={11}/>Pago</button>}
+                    {c.estado==="cobrada"&&<button className="btn btn-o btn-sm" onClick={()=>abrirCobro(c.id)}><Icon n="currency-euro" s={11}/>Pago</button>}
                   </div>
                 </div>
               );})
@@ -849,7 +871,7 @@ function App() {
       {ncModal&&(
         <div className="ov" onClick={()=>setNcModal(false)}>
           <div className="modal" onClick={e=>e.stopPropagation()}>
-            <div className="modt">Nueva cita</div>
+            <div className="modt">{editCitaId?"✏️ Editar cita":"Nueva cita"}</div>
             <div className="fg"><label className="fl">Clienta</label>
               <select className="inp" value={ncForm.cid} onChange={e=>setNcForm(p=>({...p,cid:e.target.value}))}>
                 <option value="">Seleccionar clienta...</option>
@@ -939,8 +961,8 @@ function App() {
               );
             })()}
             <div style={{display:"flex",gap:"8px",justifyContent:"flex-end"}}>
-              <button className="btn btn-o" onClick={()=>setNcModal(false)}>Cancelar</button>
-              <button className="btn btn-r" onClick={addCita}>Guardar cita</button>
+              <button className="btn btn-o" onClick={()=>{setNcModal(false);setEditCitaId(null);setNcForm({cid:"",sid:"",fecha:"",hora:"",domicilio:false,extra:"",descuento:"",adicionales:[]})}}>Cancelar</button>
+              <button className="btn btn-r" onClick={addCita}>{editCitaId?"Guardar cambios":"Guardar cita"}</button>
             </div>
           </div>
         </div>
