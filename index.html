@@ -311,6 +311,7 @@ function App() {
   const updLineaPago = (i,k,v) => setPagModal(p=>({...p, pagos:p.pagos.map((l,idx)=>idx===i?{...l,[k]:v}:l)}));
   const delLineaPago = (i) => setPagModal(p=>({...p, pagos:p.pagos.filter((_,idx)=>idx!==i)}));
   const cancelar = id => { const n=citas.map(c=>c.id===id?{...c,estado:"cancelada"}:c); setCitas(n); save("citas",n); };
+  const eliminarCita = id => { const n=citas.filter(c=>c.id!==id); setCitas(n); save("citas",n); };
 
   const citasHoy = useMemo(()=>citas.filter(c=>isSameDay(c.fecha,HOY)).sort((a,b)=>a.fecha-b.fecha),[citas]);
   const cobHoy   = citasHoy.filter(c=>c.estado==="cobrada").reduce((s,c)=>s+c.monto,0);
@@ -502,11 +503,40 @@ function App() {
 
   const exportExcel = () => {
     const wb=XLSX.utils.book_new();
-    const sesiones=citas.sort((a,b)=>a.fecha-b.fecha).map(c=>{ const cl=gC(c.cid),s=gS(c.sid); return {"Fecha":c.fecha.toLocaleDateString("es-ES"),"Hora":fmtTime(c.fecha),"Cliente":cl?.nombre||"","Teléfono":cl?.tel||"","Sede":cl?.sede||"","Servicio":s?.nombre||"","Domicilio":c.domicilio?"Sí":"No","Importe (€)":c.monto,"Estado":c.estado.charAt(0).toUpperCase()+c.estado.slice(1)}; });
-    const ws1=XLSX.utils.json_to_sheet(sesiones); ws1["!cols"]=[10,7,22,16,10,18,10,12,12].map(w=>({wch:w}));
+
+    // Hoja 1: Sesiones
+    const sesiones=citas.sort((a,b)=>a.fecha-b.fecha).map(c=>{ const cl=gC(c.cid),s=gS(c.sid); return {"Fecha":c.fecha.toLocaleDateString("es-ES"),"Hora":fmtTime(c.fecha),"Cliente":cl?.nombre||"","Teléfono":cl?.tel||"","Sede":cl?.sede||"","Servicio":s?.nombre||"","Domicilio":c.domicilio?"Sí":"No","Importe (€)":c.monto,"Estado":c.estado==="bono"?"Bono (cobrado)":c.estado.charAt(0).toUpperCase()+c.estado.slice(1),"Tipo":c.estado==="bono"?"Sesión de bono":"Sesión individual"}; });
+    const ws1=XLSX.utils.json_to_sheet(sesiones); ws1["!cols"]=[10,7,22,16,10,18,10,12,16,18].map(w=>({wch:w}));
     XLSX.utils.book_append_sheet(wb,ws1,"Sesiones");
-    const cobradas=citas.filter(c=>c.estado==="cobrada").map(c=>{ const cl=gC(c.cid),s=gS(c.sid); return {"Fecha":c.fecha.toLocaleDateString("es-ES"),"Concepto":`${s?.nombre||""} — ${cl?.nombre||""}`,"Total cobrado":c.monto}; });
-    const ws2=XLSX.utils.json_to_sheet(cobradas); XLSX.utils.book_append_sheet(wb,ws2,"Cobradas");
+
+    // Hoja 2: Ingresos cobrados (sesiones + bonos)
+    const cobSes=citas.filter(c=>c.estado==="cobrada").map(c=>{ const cl=gC(c.cid),s=gS(c.sid); return {"Fecha":c.fecha.toLocaleDateString("es-ES"),"Tipo":"Sesión individual","Concepto":`${s?.nombre||""} — ${cl?.nombre||""}`,"Cliente":cl?.nombre||"","Servicio":s?.nombre||"","Sede":cl?.sede||"","Forma de pago":c.tipoPago||"","Total cobrado":c.monto}; });
+    const cobBon=bonosV.filter(b=>b.cobrado).map(b=>{ const cl=gC(b.cid),s=gS(b.sid); return {"Fecha":b.fecha.toLocaleDateString("es-ES"),"Tipo":`Bono ${b.sesiones} sesiones`,"Concepto":`Bono ${b.sesiones} ses. de ${s?.nombre||""} — ${cl?.nombre||""}`,"Cliente":cl?.nombre||"","Servicio":s?.nombre||"","Sede":cl?.sede||"","Forma de pago":"","Total cobrado":b.precio}; });
+    const todasCob=[...cobSes,...cobBon];
+    const totalCob=todasCob.reduce((s,r)=>s+r["Total cobrado"],0);
+    todasCob.push({"Fecha":"","Tipo":"","Concepto":"TOTAL","Cliente":"","Servicio":"","Sede":"","Forma de pago":"","Total cobrado":totalCob});
+    const ws2=XLSX.utils.json_to_sheet(todasCob); ws2["!cols"]=[10,16,40,20,18,10,14,12].map(w=>({wch:w}));
+    XLSX.utils.book_append_sheet(wb,ws2,"Ingresos cobrados");
+
+    // Hoja 3: Bonos
+    const bonosH=bonosV.map(b=>{ const cl=gC(b.cid),s=gS(b.sid); return {"Fecha venta":b.fecha.toLocaleDateString("es-ES"),"Cliente":cl?.nombre||"","Teléfono":cl?.tel||"","Sede":cl?.sede||"","Servicio":s?.nombre||"","Pack":`Bono ${b.sesiones} sesiones`,"Usadas":b.usadas,"Restantes":b.sesiones-b.usadas,"Precio (€)":b.precio,"Cobrado":b.cobrado?"Sí":"No"}; });
+    bonosH.push({"Fecha venta":"","Cliente":"","Teléfono":"","Sede":"","Servicio":"","Pack":"TOTAL","Usadas":"","Restantes":"","Precio (€)":bonosV.filter(b=>b.cobrado).reduce((s,b)=>s+b.precio,0),"Cobrado":""});
+    const ws3=XLSX.utils.json_to_sheet(bonosH); ws3["!cols"]=[12,22,14,10,18,18,10,10,12,10].map(w=>({wch:w}));
+    XLSX.utils.book_append_sheet(wb,ws3,"Bonos");
+
+    // Hoja 4: Por clienta
+    const porCl=clientes.map(cl=>{ const cCitas=citas.filter(c=>c.cid===cl.id); const cobS=cCitas.filter(c=>c.estado==="cobrada").reduce((s,c)=>s+c.monto,0); const cobB=bonosV.filter(b=>b.cid===cl.id&&b.cobrado).reduce((s,b)=>s+b.precio,0); return {"Clienta":cl.nombre,"Teléfono":cl.tel,"Sede":cl.sede||"","Sesiones":cCitas.length,"Ses. cobradas":cCitas.filter(c=>c.estado==="cobrada").length,"Bonos":bonosV.filter(b=>b.cid===cl.id).length,"Ingresos ses. (€)":cobS,"Ingresos bonos (€)":cobB,"Total (€)":cobS+cobB,"Notas":cl.notas||""}; });
+    const ws4=XLSX.utils.json_to_sheet(porCl); ws4["!cols"]=[22,14,10,10,14,10,16,16,12,30].map(w=>({wch:w}));
+    XLSX.utils.book_append_sheet(wb,ws4,"Por clienta");
+
+    // Hoja 5: Resumen anual
+    const año=new Date().getFullYear();
+    const meses=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+    const porMes=meses.map((mes,i)=>{ const mC=citas.filter(c=>c.fecha.getMonth()===i&&c.fecha.getFullYear()===año); const mB=bonosV.filter(b=>b.cobrado&&b.fecha.getMonth()===i&&b.fecha.getFullYear()===año); const cobS=mC.filter(c=>c.estado==="cobrada").reduce((s,c)=>s+c.monto,0); const cobB=mB.reduce((s,b)=>s+b.precio,0); const pen=mC.filter(c=>c.estado==="pendiente").reduce((s,c)=>s+c.monto,0); return {"Mes":mes,"Sesiones":mC.length,"Ses. cobradas":mC.filter(c=>c.estado==="cobrada").length,"Ingr. sesiones (€)":cobS,"Ingr. bonos (€)":cobB,"Total cobrado (€)":cobS+cobB,"Pendiente (€)":pen,"Total generado (€)":cobS+cobB+pen}; });
+    porMes.push({"Mes":"TOTAL","Sesiones":porMes.reduce((s,r)=>s+r["Sesiones"],0),"Ses. cobradas":porMes.reduce((s,r)=>s+r["Ses. cobradas"],0),"Ingr. sesiones (€)":porMes.reduce((s,r)=>s+r["Ingr. sesiones (€)"],0),"Ingr. bonos (€)":porMes.reduce((s,r)=>s+r["Ingr. bonos (€)"],0),"Total cobrado (€)":porMes.reduce((s,r)=>s+r["Total cobrado (€)"],0),"Pendiente (€)":porMes.reduce((s,r)=>s+r["Pendiente (€)"],0),"Total generado (€)":porMes.reduce((s,r)=>s+r["Total generado (€)"],0)});
+    const ws5=XLSX.utils.json_to_sheet(porMes); ws5["!cols"]=[14,10,14,16,14,16,14,16].map(w=>({wch:w}));
+    XLSX.utils.book_append_sheet(wb,ws5,`Resumen ${año}`);
+
     const fecha=new Date().toLocaleDateString("es-ES").replace(/\//g,"-");
     XLSX.writeFile(wb,`CutAndBeauty_${fecha}.xlsx`);
   };
@@ -798,6 +828,7 @@ function App() {
                       <button className="btn btn-o btn-sm" onClick={()=>cancelar(c.id)}><Icon n="x" s={11}/></button>
                     </>}
                     {c.estado==="cobrada"&&<button className="btn btn-o btn-sm" onClick={()=>abrirCobro(c.id)}><Icon n="currency-euro" s={11}/>Pago</button>}
+                    {c.estado==="bono"&&<button className="btn btn-o btn-sm" onClick={()=>eliminarCita(c.id)} style={{color:"var(--red)",borderColor:"rgba(184,98,98,.3)"}} title="Eliminar sesión de bono"><Icon n="trash" s={11}/></button>}
                   </div>
                 </div>
               );})
