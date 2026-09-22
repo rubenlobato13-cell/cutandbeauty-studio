@@ -235,7 +235,7 @@ function App() {
   const [bModal,setBModal]  = useState(false);
   const [copied,setCopied]  = useState(false);
 
-  const [ncForm,setNcForm]  = useState({cid:"",sid:"",fecha:"",hora:"",domicilio:false,extra:"",descuento:""});
+  const [ncForm,setNcForm]  = useState({cid:"",sid:"",fecha:"",hora:"",domicilio:false,extra:"",descuento:"",adicionales:[]});
   const [clForm,setClForm]  = useState({nombre:"",tel:"",email:"",fav:"",notas:"",sede:"Valencia"});
   const [sForm,setSForm]    = useState({icon:"✂️",nombre:"",precio:"",desc:""});
   const [bForm,setBForm]    = useState({cid:"",sid:"",sesiones:"3"});
@@ -328,11 +328,12 @@ function App() {
     const s=gS(parseInt(ncForm.sid));
     const extra=parseFloat(ncForm.extra)||0;
     const descuento=parseFloat(ncForm.descuento)||0;
-    const monto=Math.max(0,(s?.precio||0)+(ncForm.domicilio?20:0)+extra-descuento);
+    const totalAdicionales=(ncForm.adicionales||[]).reduce((s,a)=>s+(parseFloat(a.precio)||0),0);
+    const monto=Math.max(0,(s?.precio||0)+(ncForm.domicilio?20:0)+extra+totalAdicionales-descuento);
     const nid=citas.length?Math.max(...citas.map(c=>c.id))+1:1;
-    const n=[...citas,{id:nid,cid:parseInt(ncForm.cid),sid:parseInt(ncForm.sid),fecha,estado:"pendiente",monto,domicilio:ncForm.domicilio,extra,descuento}];
+    const n=[...citas,{id:nid,cid:parseInt(ncForm.cid),sid:parseInt(ncForm.sid),fecha,estado:"pendiente",monto,domicilio:ncForm.domicilio,extra,descuento,adicionales:ncForm.adicionales||[]}];
     setCitas(n); save("citas",n);
-    setNcForm({cid:"",sid:"",fecha:"",hora:"",domicilio:false,extra:"",descuento:""});
+    setNcForm({cid:"",sid:"",fecha:"",hora:"",domicilio:false,extra:"",descuento:"",adicionales:[]});
     setNcModal(false);
   };
 
@@ -889,16 +890,46 @@ function App() {
                 </div>
               </div>
             </div>
+
+            {/* Servicios adicionales */}
+            <div style={{background:"var(--surf)",border:"1px solid var(--b1)",borderRadius:"9px",padding:"13px",marginBottom:"12px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
+                <div style={{fontSize:".72rem",color:"var(--mut2)",textTransform:"uppercase",letterSpacing:".08em",fontWeight:500}}>✚ Servicios adicionales</div>
+                <button className="btn btn-o btn-sm" onClick={()=>setNcForm(p=>({...p,adicionales:[...(p.adicionales||[]),{nombre:"",precio:""}]}))}>
+                  <Icon n="plus" s={11}/>Añadir
+                </button>
+              </div>
+              {(ncForm.adicionales||[]).length===0
+                ? <div style={{fontSize:".75rem",color:"var(--mut)",fontStyle:"italic",textAlign:"center",padding:"6px 0"}}>Pulsa «Añadir» para incluir servicios extra con nombre y precio libre</div>
+                : (ncForm.adicionales||[]).map((a,i)=>(
+                  <div key={i} style={{display:"flex",gap:"7px",alignItems:"center",marginBottom:"7px"}}>
+                    <input className="inp" placeholder="Nombre del servicio..." value={a.nombre}
+                      onChange={e=>setNcForm(p=>({...p,adicionales:p.adicionales.map((x,idx)=>idx===i?{...x,nombre:e.target.value}:x)}))}
+                      style={{flex:1}}/>
+                    <input type="number" min="0" className="inp" placeholder="0" value={a.precio}
+                      onChange={e=>setNcForm(p=>({...p,adicionales:p.adicionales.map((x,idx)=>idx===i?{...x,precio:e.target.value}:x)}))}
+                      style={{width:"80px",textAlign:"right",fontFamily:"var(--fd)",fontSize:".95rem",color:"var(--rose)"}}/>
+                    <span style={{fontSize:".78rem",color:"var(--mut)",flexShrink:0}}>€</span>
+                    <button className="btn btn-o btn-sm" onClick={()=>setNcForm(p=>({...p,adicionales:p.adicionales.filter((_,idx)=>idx!==i)}))} style={{padding:"5px 7px",flexShrink:0}}><Icon n="x" s={11}/></button>
+                  </div>
+                ))
+              }
+            </div>
+
             {ncForm.sid&&(()=>{
               const s=gS(parseInt(ncForm.sid));
               const extra=parseFloat(ncForm.extra)||0;
               const descuento=parseFloat(ncForm.descuento)||0;
-              const total=Math.max(0,(s?.precio||0)+(ncForm.domicilio?20:0)+extra-descuento);
+              const totalAd=(ncForm.adicionales||[]).reduce((s,a)=>s+(parseFloat(a.precio)||0),0);
+              const total=Math.max(0,(s?.precio||0)+(ncForm.domicilio?20:0)+extra+totalAd-descuento);
               return(
                 <div style={{background:"rgba(232,196,184,.07)",border:"1px solid rgba(232,196,184,.18)",borderRadius:"8px",padding:"11px 13px",marginBottom:"12px"}}>
                   <div style={{display:"flex",justifyContent:"space-between",fontSize:".78rem",color:"var(--mut2)",marginBottom:"3px"}}><span>{s?.nombre}</span><span>{fmt(s?.precio)}</span></div>
                   {ncForm.domicilio&&<div style={{display:"flex",justifyContent:"space-between",fontSize:".78rem",color:"var(--mut2)",marginBottom:"3px"}}><span>Domicilio</span><span>+20€</span></div>}
                   {extra>0&&<div style={{display:"flex",justifyContent:"space-between",fontSize:".78rem",color:"var(--mut2)",marginBottom:"3px"}}><span>Extra</span><span>+{fmt(extra)}</span></div>}
+                  {(ncForm.adicionales||[]).filter(a=>a.nombre&&a.precio>0).map((a,i)=>(
+                    <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:".78rem",color:"var(--mut2)",marginBottom:"3px"}}><span>✚ {a.nombre}</span><span>+{fmt(a.precio)}</span></div>
+                  ))}
                   {descuento>0&&<div style={{display:"flex",justifyContent:"space-between",fontSize:".78rem",color:"var(--green)",marginBottom:"3px"}}><span>🏷️ Descuento</span><span>-{fmt(descuento)}</span></div>}
                   <div style={{borderTop:"1px solid rgba(232,196,184,.15)",paddingTop:"7px",marginTop:"3px",display:"flex",justifyContent:"flex-end"}}>
                     <span style={{fontFamily:"var(--fd)",fontSize:"1.25rem",color:"var(--rose)",fontWeight:600}}>{fmt(total)}</span>
