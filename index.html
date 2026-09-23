@@ -249,6 +249,8 @@ function App() {
   const [sModal,setSModal]  = useState(false);
   const [bModal,setBModal]  = useState(false);
   const [editBonoId,setEditBonoId]= useState(null);
+  const [bonoSesModal,setBonoSesModal]= useState(null);
+  const [bonoSesForm,setBonoSesForm]= useState({fecha:"",hora:""});
   const [copied,setCopied]  = useState(false);
 
   const [ncForm,setNcForm]  = useState({cid:"",sid:"",fecha:"",hora:"",domicilio:false,extra:"",descuento:"",adicionales:[]});
