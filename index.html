@@ -254,6 +254,8 @@ function App() {
   const [copied,setCopied]  = useState(false);
 
   const [ncForm,setNcForm]  = useState({cid:"",sid:"",fecha:"",hora:"",domicilio:false,extra:"",descuento:"",adicionales:[]});
+  const [cliQuery,setCliQuery] = useState("");
+  const [cliDrop,setCliDrop]   = useState(false);
   const [clForm,setClForm]  = useState({nombre:"",tel:"",email:"",fav:"",notas:"",sede:"Valencia"});
   const [sForm,setSForm]    = useState({icon:"✂️",nombre:"",precio:"",desc:""});
   const [bForm,setBForm]    = useState({cid:"",sid:"",sesiones:"3",precioManual:""});
@@ -345,7 +347,8 @@ function App() {
   const clTotal = id => citas.filter(c=>c.cid===id&&c.estado==="cobrada").reduce((s,c)=>s+c.monto,0);
 
   const addCita = () => {
-    if(!ncForm.cid||!ncForm.sid||!ncForm.fecha||!ncForm.hora) return;
+    const tieneAdicionales=(ncForm.adicionales||[]).some(a=>a.nombre.trim());
+    if(!ncForm.cid||(!ncForm.sid&&!tieneAdicionales)||!ncForm.fecha||!ncForm.hora) return;
     const [y,mo,d]=ncForm.fecha.split("-").map(Number);
     const [h,mi]=ncForm.hora.split(":").map(Number);
     const fecha=new Date(y,mo-1,d,h,mi);
@@ -363,6 +366,7 @@ function App() {
     }
     setCitas(n); save("citas",n);
     setNcForm({cid:"",sid:"",fecha:"",hora:"",domicilio:false,extra:"",descuento:"",adicionales:[]});
+    setCliQuery(""); setCliDrop(false);
     setEditCitaId(null);
     setNcModal(false);
   };
@@ -378,6 +382,8 @@ function App() {
       adicionales:c.adicionales||[],
     });
     setEditCitaId(c.id);
+    const cli=clientes.find(x=>String(x.id)===String(c.cid));
+    setCliQuery(cli?cli.nombre:"");
     setNcModal(true);
   };
 
@@ -1121,11 +1127,31 @@ function App() {
         <div className="ov" onClick={()=>setNcModal(false)}>
           <div className="modal" onClick={e=>e.stopPropagation()}>
             <div className="modt">{editCitaId?"✏️ Editar cita":"Nueva cita"}</div>
-            <div className="fg"><label className="fl">Clienta</label>
-              <select className="inp" value={ncForm.cid} onChange={e=>setNcForm(p=>({...p,cid:e.target.value}))}>
-                <option value="">Seleccionar clienta...</option>
-                {clientes.map(c=><option key={c.id} value={c.id}>{c.nombre}</option>)}
-              </select>
+            <div className="fg" style={{position:"relative"}}><label className="fl">Clienta</label>
+              <input
+                className="inp"
+                placeholder="Buscar clienta por nombre..."
+                value={cliQuery}
+                autoComplete="off"
+                onChange={e=>{setCliQuery(e.target.value);setCliDrop(true);if(!e.target.value)setNcForm(p=>({...p,cid:""}));}}
+                onFocus={()=>setCliDrop(true)}
+                onBlur={()=>setTimeout(()=>setCliDrop(false),200)}
+              />
+              {cliDrop&&cliQuery&&(()=>{
+                const filtered=clientes.filter(c=>c.nombre.toLowerCase().includes(cliQuery.toLowerCase()));
+                return filtered.length>0?(
+                  <div style={{position:"absolute",top:"100%",left:0,right:0,background:"var(--card)",border:"1px solid var(--b2)",borderRadius:"8px",zIndex:999,maxHeight:"180px",overflowY:"auto",boxShadow:"0 4px 16px rgba(0,0,0,.4)"}}>
+                    {filtered.map(c=>(
+                      <div key={c.id} onMouseDown={()=>{setNcForm(p=>({...p,cid:String(c.id)}));setCliQuery(c.nombre);setCliDrop(false);}}
+                        style={{padding:"9px 13px",cursor:"pointer",fontSize:".85rem",color:"var(--cream)",borderBottom:"1px solid var(--b1)"}}
+                        onMouseEnter={e=>e.currentTarget.style.background="var(--surf)"}
+                        onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                      >{c.nombre}{c.tel?<span style={{color:"var(--mut)",fontSize:".75rem",marginLeft:"8px"}}>{c.tel}</span>:""}</div>
+                    ))}
+                  </div>
+                ):null;
+              })()}
+              {ncForm.cid&&(()=>{const c=clientes.find(x=>String(x.id)===String(ncForm.cid));return c?<div style={{fontSize:".72rem",color:"var(--green)",marginTop:"4px"}}>✓ {c.nombre} seleccionada</div>:null;})()}
             </div>
             <div className="fg"><label className="fl">Servicio</label>
               <select className="inp" value={ncForm.sid} onChange={e=>setNcForm(p=>({...p,sid:e.target.value}))}>
@@ -1188,18 +1214,18 @@ function App() {
               }
             </div>
 
-            {ncForm.sid&&(()=>{
-              const s=gS(parseInt(ncForm.sid));
+            {(ncForm.sid||(ncForm.adicionales||[]).some(a=>a.nombre))&&(()=>{
+              const s=ncForm.sid?gS(parseInt(ncForm.sid)):null;
               const extra=parseFloat(ncForm.extra)||0;
               const descuento=parseFloat(ncForm.descuento)||0;
-              const totalAd=(ncForm.adicionales||[]).reduce((s,a)=>s+(parseFloat(a.precio)||0),0);
+              const totalAd=(ncForm.adicionales||[]).reduce((acc,a)=>acc+(parseFloat(a.precio)||0),0);
               const total=Math.max(0,(s?.precio||0)+(ncForm.domicilio?20:0)+extra+totalAd-descuento);
               return(
                 <div style={{background:"rgba(232,196,184,.07)",border:"1px solid rgba(232,196,184,.18)",borderRadius:"8px",padding:"11px 13px",marginBottom:"12px"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:".78rem",color:"var(--mut2)",marginBottom:"3px"}}><span>{s?.nombre}</span><span>{fmt(s?.precio)}</span></div>
+                  {s&&<div style={{display:"flex",justifyContent:"space-between",fontSize:".78rem",color:"var(--mut2)",marginBottom:"3px"}}><span>{s.nombre}</span><span>{fmt(s.precio)}</span></div>}
                   {ncForm.domicilio&&<div style={{display:"flex",justifyContent:"space-between",fontSize:".78rem",color:"var(--mut2)",marginBottom:"3px"}}><span>Domicilio</span><span>+20€</span></div>}
                   {extra>0&&<div style={{display:"flex",justifyContent:"space-between",fontSize:".78rem",color:"var(--mut2)",marginBottom:"3px"}}><span>Extra</span><span>+{fmt(extra)}</span></div>}
-                  {(ncForm.adicionales||[]).filter(a=>a.nombre&&a.precio>0).map((a,i)=>(
+                  {(ncForm.adicionales||[]).filter(a=>a.nombre&&parseFloat(a.precio)>0).map((a,i)=>(
                     <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:".78rem",color:"var(--mut2)",marginBottom:"3px"}}><span>✚ {a.nombre}</span><span>+{fmt(a.precio)}</span></div>
                   ))}
                   {descuento>0&&<div style={{display:"flex",justifyContent:"space-between",fontSize:".78rem",color:"var(--green)",marginBottom:"3px"}}><span>🏷️ Descuento</span><span>-{fmt(descuento)}</span></div>}
@@ -1210,7 +1236,7 @@ function App() {
               );
             })()}
             <div style={{display:"flex",gap:"8px",justifyContent:"flex-end"}}>
-              <button className="btn btn-o" onClick={()=>{setNcModal(false);setEditCitaId(null);setNcForm({cid:"",sid:"",fecha:"",hora:"",domicilio:false,extra:"",descuento:"",adicionales:[]})}}>Cancelar</button>
+              <button className="btn btn-o" onClick={()=>{setNcModal(false);setEditCitaId(null);setNcForm({cid:"",sid:"",fecha:"",hora:"",domicilio:false,extra:"",descuento:"",adicionales:[]});setCliQuery("");setCliDrop(false);}}>Cancelar</button>
               <button className="btn btn-r" onClick={addCita}>{editCitaId?"Guardar cambios":"Guardar cita"}</button>
             </div>
           </div>
